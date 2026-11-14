@@ -14,7 +14,12 @@ where c.kind = 'item_type'
   and c.business_id = s.business_id
   and length(s.prefix) = 2
   and substr(s.prefix, 2) = c.code
-  and length(c.code) = 1;
+  and length(c.code) = 1
+  -- skip if the new code is already used by another item type, or the new prefix already has a location
+  and not exists (select 1 from public.sku_codes o
+                  where o.business_id = c.business_id and o.kind = 'item_type' and o.code = t.code)
+  and not exists (select 1 from public.storage_locations x
+                  where x.business_id = s.business_id and x.prefix = left(s.prefix, 1) || t.code);
 
 -- 2. The codes themselves (only the built-in one-letter ones; custom two-letter codes are kept)
 update public.sku_codes c
@@ -24,7 +29,13 @@ from (values
   ('Jacket', 'JA'), ('Coat', 'CO'), ('Skirt', 'SK'), ('Pants', 'PA'), ('Jeans', 'JE'),
   ('Shoes', 'SO'), ('Bag', 'BA'), ('Accessory', 'AC'), ('Romper', 'RO'), ('Playsuit', 'PL')
 ) as t(label, code)
-where c.kind = 'item_type' and c.label = t.label and length(c.code) = 1;
+where c.kind = 'item_type' and c.label = t.label and length(c.code) = 1
+  -- skip if another item type already uses the new code (e.g. a custom "Shorts = SH")
+  and not exists (select 1 from public.sku_codes o
+                  where o.business_id = c.business_id and o.kind = 'item_type' and o.code = t.code);
+
+-- Item types still on a one-letter code (because the two-letter code was taken) are listed by
+-- the query at the end; change them in the app under More > SKU codes.
 
 -- 3. New businesses: departments incl. Unisex, and two-letter item types
 drop trigger if exists settings_add_unisex on public.business_settings;
@@ -76,3 +87,7 @@ $$;
 
 revoke all on function public.create_business(text) from public, anon;
 grant execute on function public.create_business(text) to authenticated;
+
+-- Anything left to sort out by hand (usually nothing):
+select label, code as old_code, 'two-letter code already taken: pick one in More > SKU codes' as note
+from public.sku_codes where kind = 'item_type' and length(code) = 1;
