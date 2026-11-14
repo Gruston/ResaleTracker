@@ -26,7 +26,14 @@
     "plugins": [
       "expo-router",
       "expo-sharing",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Resale Tracker uses your photos to add pictures of items and receipts.",
+          "cameraPermission": "Resale Tracker uses the camera to photograph items and receipts."
+        }
+      ]
     ]
   }
 }

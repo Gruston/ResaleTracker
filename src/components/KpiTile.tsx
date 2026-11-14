@@ -7,13 +7,16 @@ export interface KpiTileProps {
   value: string;
   label: string;
   onPress?: () => void;
+  /** Colour the number: 'good' (accent) or 'warn'. */
+  tone?: 'default' | 'good' | 'warn';
 }
 
 /** Big number with a small label. Put several in a <KpiGrid>. */
-export function KpiTile({ value, label, onPress }: KpiTileProps) {
+export function KpiTile({ value, label, onPress, tone = 'default' }: KpiTileProps) {
+  const toneColor = tone === 'good' ? colors.accent : tone === 'warn' ? colors.warn : undefined;
   const body = (
     <>
-      <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={[styles.value, toneColor ? { color: toneColor } : null]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
       <Text style={styles.label}>{label}</Text>

@@ -74,7 +74,7 @@ export function TripDetail({ id }: { id: string }) {
         <KpiGrid>
           <KpiTile value={`${stats.itemsSold}/${stats.itemsTotal}`} label="Items sold" />
           <KpiTile value={formatMoney0(stats.earned)} label="Earned so far" />
-          <KpiTile value={formatMoney0(Math.abs(stats.net))} label={stats.net >= 0 ? 'Trip paid off' : 'To earn back'} />
+          <KpiTile value={formatMoney0(Math.abs(stats.net))} label={stats.net >= 0 ? 'Trip paid off' : 'To earn back'} tone={stats.net >= 0 ? 'good' : 'warn'} />
         </KpiGrid>
       ) : null}
 
