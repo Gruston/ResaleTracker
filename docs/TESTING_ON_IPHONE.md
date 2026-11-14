@@ -14,7 +14,7 @@ That's it. When Greg publishes a new version, just close and reopen the app in E
 
 ## For Greg
 
-Supabase setting (once): Authentication › Sign In / Providers › Email › turn **Confirm email** OFF. (Free Supabase projects can't customise auth emails and send at most 2 per hour, so the app uses email + password with no emails.)
+Supabase (once, in Kat's project): run both files in `supabase/migrations/` in order in the SQL Editor, then Authentication › Sign In / Providers › Email › turn **Confirm email** OFF. (Free Supabase projects can't customise auth emails and send at most 2 per hour, so the app uses email + password with no emails.)
 
 
 One-off:
@@ -22,7 +22,6 @@ One-off:
 ```bash
 git clone https://github.com/Gruston/ResaleTracker && cd ResaleTracker
 npm ci
-cp .env.example .env      # paste the Supabase URL and publishable key from Kat's project
 npx eas-cli@latest login  # your Expo account
 npx eas-cli@latest init   # links the project to your Expo account (commit the projectId it adds to app.json)
 npx eas-cli@latest update:configure   # sets up EAS Update (commit the app.json changes)
@@ -41,4 +40,4 @@ Quick testing together on the same Wi-Fi instead (no publishing): `npx expo star
 
 ## Demo mode
 
-If `.env` is missing, the app runs with built-in sample data (a "Demo data" banner shows). Nothing is saved. Handy for trying things out.
+The app connects to Kat's Supabase project by default. To try it with built-in sample data instead (nothing saved, "Demo data" banner), start it with `EXPO_PUBLIC_DEMO=1 npx expo start`.
