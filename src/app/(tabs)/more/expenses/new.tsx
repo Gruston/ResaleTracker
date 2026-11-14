@@ -1,12 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 
-import { Button, Field, Screen, Select } from '@/components';
+import { Button, DateField, Field, Screen, Select } from '@/components';
 import { uploadImage, useBusiness, useCreateExpense } from '@/data';
 import { today } from '@/domain';
 import type { ExpenseCategory } from '@/domain';
 import { EXPENSE_CATEGORIES, parseAmount, validateExpense, type ExpenseErrors } from '@/features/more/forms';
-import { DateField, ErrorText, ReceiptPhoto } from '@/features/more/ui';
+import { ErrorText, ReceiptPhoto } from '@/features/more/ui';
 
 export default function NewExpenseScreen() {
   const create = useCreateExpense();

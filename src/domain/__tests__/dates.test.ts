@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import {
-  addDays, daysBetween, financialYearOf, formatDate, formatDateShort, fyLabel, fyRange, monthLabel, monthLabelLong, monthOf,
+  addDays, daysBetween, financialYearOf, formatDate, formatDateAU, formatDateShort, parseDateAU, fyLabel, fyRange, monthLabel, monthLabelLong, monthOf,
   monthsEndingAt, nextSeason, nextSeasonStart, seasonMonths, seasonOf, seasonStartYear, today,
 } from '../dates';
 
@@ -121,5 +121,38 @@ describe('financial year', () => {
   });
   it('fyRange', () => {
     expect(fyRange(2026)).toEqual({ start: '2026-07-01', end: '2027-06-30' });
+  });
+});
+
+describe('formatDateAU / parseDateAU', () => {
+  it('formats day first, zero padded', () => {
+    expect(formatDateAU('2026-11-14')).toBe('14/11/2026');
+    expect(formatDateAU('2026-03-04')).toBe('04/03/2026');
+  });
+  it('reads day first with any separator', () => {
+    expect(parseDateAU('14/11/2026')).toBe('2026-11-14');
+    expect(parseDateAU('4/3/2026')).toBe('2026-03-04');
+    expect(parseDateAU('04-03-2026')).toBe('2026-03-04');
+    expect(parseDateAU('4.3.2026')).toBe('2026-03-04');
+    expect(parseDateAU('4 3 2026')).toBe('2026-03-04');
+    expect(parseDateAU(' 4/3/26 ')).toBe('2026-03-04');
+    expect(parseDateAU('1/12/2026')).toBe('2026-12-01');
+  });
+  it('accepts ISO', () => {
+    expect(parseDateAU('2026-11-14')).toBe('2026-11-14');
+    expect(parseDateAU('2026-02-30')).toBeNull();
+  });
+  it('rejects impossible or unreadable dates', () => {
+    expect(parseDateAU('31/02/2026')).toBeNull();
+    expect(parseDateAU('1/13/2026')).toBeNull();
+    expect(parseDateAU('0/1/2026')).toBeNull();
+    expect(parseDateAU('29/02/2027')).toBeNull();
+    expect(parseDateAU('29/02/2028')).toBe('2028-02-29');
+    expect(parseDateAU('')).toBeNull();
+    expect(parseDateAU('14/11')).toBeNull();
+    expect(parseDateAU('14 Nov 2026')).toBeNull();
+  });
+  it('round trips', () => {
+    expect(parseDateAU(formatDateAU('2026-11-14'))).toBe('2026-11-14');
   });
 });

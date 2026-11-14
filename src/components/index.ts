@@ -20,3 +20,4 @@ export { Fab, type FabProps } from './Fab';
 export { SectionTitle, KV, Callout, SearchField } from './Misc';
 export { DemoBanner } from './DemoBanner';
 export { TabBar, TAB_BAR_HEIGHT } from './TabBar';
+export { DateField, type DateFieldProps } from './DateField';

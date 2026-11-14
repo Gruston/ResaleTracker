@@ -182,6 +182,6 @@ export function validateExpense(f: ExpenseForm): ExpenseErrors {
   if (!f.description.trim()) errors.description = 'Say what it was for, like Satchels';
   const amount = parseAmount(f.amount);
   if (amount === null || amount <= 0) errors.amount = 'Enter the amount, like 24.50';
-  if (!isValidDate(f.date)) errors.date = 'Use the form YYYY-MM-DD';
+  if (!isValidDate(f.date)) errors.date = 'Use DD/MM/YYYY, like 14/11/2026';
   return errors;
 }

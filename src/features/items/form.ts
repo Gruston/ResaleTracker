@@ -79,7 +79,7 @@ export function validateForm(s: ItemFormState): ItemFormErrors {
     const ad = parseMoney(s.adText);
     if (ad == null || ad > 100) e.ad = 'Enter a percentage from 0 to 100';
   }
-  if (s.listedDate.trim() && !isValidDate(s.listedDate.trim())) e.listedDate = 'Use the format YYYY-MM-DD';
+  if (s.listedDate.trim() && !isValidDate(s.listedDate.trim())) e.listedDate = 'Use DD/MM/YYYY, like 14/11/2026';
   return e;
 }
 

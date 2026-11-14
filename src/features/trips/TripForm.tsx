@@ -2,12 +2,11 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
 
-import { Button, Card, Field, Screen, SectionTitle } from '@/components';
+import { Button, Card, DateField, Field, Screen, SectionTitle } from '@/components';
 import { uploadImage, useBusiness, useBusinessData, useCreateTrip, useUpdateTrip } from '@/data';
 import { formatMoney, sumMoney, today } from '@/domain';
 import type { Trip } from '@/domain/types';
 import { colors } from '@/theme';
-import { DateField } from './DateField';
 import { DraftLinesEditor, newDraftLine } from './DraftLinesEditor';
 import { ErrorText, errorMessage } from './ErrorText';
 import { isValidDate, parseMoney, readDraftLines, type DraftLine } from './helpers';
@@ -48,7 +47,7 @@ export function TripForm({ trip, autoCamera }: TripFormProps) {
   const save = async () => {
     const next: typeof errors = {};
     if (!shopId) next.shop = 'Choose the shop.';
-    if (!isValidDate(date)) next.date = 'Use the form YYYY-MM-DD.';
+    if (!isValidDate(date)) next.date = 'Use DD/MM/YYYY, like 14/11/2026.';
     if (totalNum === null) next.total = 'Enter the total on the receipt.';
     setErrors(next);
     setInvalid(read.invalid);

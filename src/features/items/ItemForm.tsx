@@ -7,6 +7,7 @@ import {
   Button,
   Callout,
   Card,
+  DateField,
   EmptyState,
   Field,
   Icon,
@@ -98,7 +99,8 @@ function FormBody({ existing, params }: { existing?: NonNullable<ReturnType<type
   const [newShop, setNewShop] = useState('');
 
   const set = <K extends keyof ItemFormState>(k: K, v: ItemFormState[K]) => setF((p) => ({ ...p, [k]: v }));
-  const errors = validateForm(f);
+  const [listedBad, setListedBad] = useState(false);
+  const errors = { ...validateForm(f), ...(listedBad ? { listedDate: 'Use DD/MM/YYYY, like 14/11/2026' } : {}) };
   const shown = shake ? errors : {};
   const wardrobe = isWardrobe(shops, f.shopId);
   const prefix = skuPrefix(f.department, f.itemType, skuCodes);
@@ -331,15 +333,14 @@ function FormBody({ existing, params }: { existing?: NonNullable<ReturnType<type
           </Text>
         </Card>
       ) : null}
-      <Field
+      <DateField
         label="Date listed"
         value={f.listedDate}
-        onChangeText={(v) => set('listedDate', v)}
-        placeholder={todayStr}
-        keyboardType="numbers-and-punctuation"
-        autoCapitalize="none"
+        onChange={(v) => set('listedDate', v)}
+        optional
+        onValidChange={(ok) => setListedBad(!ok)}
         error={shown.listedDate}
-        hint={p.hasPrice ? `Defaults to today (${formatDate(todayStr)}). Format YYYY-MM-DD.` : 'Without a price this is saved as a draft.'}
+        hint={p.hasPrice ? `Defaults to today (${formatDate(todayStr)}).` : 'Without a price this is saved as a draft.'}
       />
 
       {existing ? <Button label="Delete item" variant="danger" onPress={confirmDelete} loading={del.isPending} style={{ marginTop: 12 }} /> : null}

@@ -44,6 +44,33 @@ export function formatDate(d: string): string {
   return `${day} ${MONTHS[m - 1]} ${y}`;
 }
 
+/** '2026-11-14' -> "14/11/2026" (Australian numeric format, zero-padded). */
+export function formatDateAU(iso: string): string {
+  const [y, m, day] = parts(iso);
+  return `${pad(day)}/${pad(m)}/${pad(y, 4)}`;
+}
+
+function validYmd(y: number, m: number, d: number): string | null {
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null;
+  if (y < 1900 || y > 2200 || m < 1 || m > 12 || d < 1) return null;
+  if (d > new Date(Date.UTC(y, m, 0)).getUTCDate()) return null;
+  return `${pad(y, 4)}-${pad(m)}-${pad(d)}`;
+}
+
+/**
+ * Read a typed Australian date (day first, always): D/M/YYYY, DD/MM/YYYY, D/M/YY (-> 20YY), separators '/', '-', '.' or
+ * spaces. A full ISO 'YYYY-MM-DD' is also accepted. Returns 'YYYY-MM-DD', or null when empty or not a real date.
+ */
+export function parseDateAU(text: string): string | null {
+  const s = text.trim();
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (m) return validYmd(Number(m[1]), Number(m[2]), Number(m[3]));
+  m = /^(\d{1,2})[/.\- ]+(\d{1,2})[/.\- ]+(\d{4}|\d{2})$/.exec(s);
+  if (!m) return null;
+  const y = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
+  return validYmd(y, Number(m[2]), Number(m[1]));
+}
+
 /** '2026-11-14' -> "14 Nov" (no year). */
 export function formatDateShort(d: string): string {
   const [, m, day] = parts(d);

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Card, EmptyState, Field, Icon, KV, Screen, SearchField, Sheet, SheetOption, Thumb } from '@/components';
+import { Button, Card, DateField, EmptyState, Field, Icon, KV, Screen, SearchField, Sheet, SheetOption, Thumb } from '@/components';
 import { useBusinessData, useRecordSale } from '@/data';
 import type { BusinessData, Item } from '@/domain';
 import { formatMoney, protectionFor, round2, saleForItem, sumMoney, today } from '@/domain';
@@ -200,15 +200,7 @@ function RecordSaleForm({ item, data, onSaved }: { item: Item; data: BusinessDat
       </Text>
       <Card>
         <Field label="eBay order no. (optional)" value={orderNo} onChangeText={setOrderNo} autoCapitalize="none" autoCorrect={false} />
-        <Field
-          label="Date sold"
-          value={soldDate}
-          onChangeText={setSoldDate}
-          placeholder="YYYY-MM-DD"
-          keyboardType="numbers-and-punctuation"
-          autoCorrect={false}
-          error={err.soldDate}
-        />
+        <DateField label="Date sold" value={soldDate} onChange={setSoldDate} error={err.soldDate} />
         <Field
           label="Postage label cost"
           prefix="$"

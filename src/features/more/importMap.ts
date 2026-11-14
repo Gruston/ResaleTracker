@@ -173,7 +173,7 @@ function fullYear(y: number, digits: number): number {
 }
 
 /**
- * Read a date written like 2026-11-14, 14/11/2026, 14/11/26, 14-Nov-26, 14 November 2026, Nov 14, 2026, or any of
+ * Read a date written like 2026-11-14, 14/11/2026, 14/11/26, 14-Nov-26, 14 November 2026, Nov 14, 2026, Nov-14-26 (eBay), or any of
  * those followed by a time. Numeric day/month dates are read day-first (Australia) unless the second number can
  * only be a day. Returns YYYY-MM-DD or null.
  */
@@ -200,7 +200,7 @@ export function parseDate(raw: string | null | undefined): string | null {
     return mon < 0 ? null : validYmd(fullYear(Number(m[3]), m[3].length), mon + 1, Number(m[1]));
   }
 
-  m = /^([A-Za-z]{3,9}) (\d{1,2}) (\d{2}|\d{4})(?:[T ].*)?$/.exec(s);
+  m = /^([A-Za-z]{3,9})[ -](\d{1,2})[ -](\d{2}|\d{4})(?:[T ].*)?$/.exec(s);
   if (m) {
     const mon = MONTH_NAMES.indexOf(m[1].slice(0, 3).toLowerCase());
     return mon < 0 ? null : validYmd(fullYear(Number(m[3]), m[3].length), mon + 1, Number(m[2]));
@@ -500,6 +500,6 @@ export const TEMPLATE_HEADERS = [
 ] as const;
 
 export const TEMPLATE_ROWS: readonly (readonly string[])[] = [
-  ['2026-03-14', 'Zimmermann silk wrap dress', 'Zimmermann', 'Women', 'Dress', '10', '22.00', '95.00', '82.00', '100.60', '6.10', '12.50', '3.40', '12-34567-89012', 'Vinnies Newtown'],
-  ['2026-04-02', 'Country Road linen shirt', 'Country Road', 'Men', 'Shirt', 'M', '0', '45.00', '38.00', '49.90', '3.40', '9.50', '', '', 'My wardrobe'],
+  ['14/03/2026', 'Zimmermann silk wrap dress', 'Zimmermann', 'Women', 'Dress', '10', '22.00', '95.00', '82.00', '100.60', '6.10', '12.50', '3.40', '12-34567-89012', 'Vinnies Newtown'],
+  ['02/04/2026', 'Country Road linen shirt', 'Country Road', 'Men', 'Shirt', 'M', '0', '45.00', '38.00', '49.90', '3.40', '9.50', '', '', 'My wardrobe'],
 ];

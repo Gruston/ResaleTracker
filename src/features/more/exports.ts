@@ -1,5 +1,5 @@
 // Pure builders for the CSV files: export everything (items, sales, expenses, trips) and the tax-year detail.
-import { financialYearOf, fyLabel } from '@/domain/dates';
+import { financialYearOf, formatDateAU, fyLabel } from '@/domain/dates';
 import { soldItems } from '@/domain/analytics';
 import { ebayEarnings, itemProfit, round2 } from '@/domain/money';
 import { storageFor } from '@/domain/sku';
@@ -9,6 +9,9 @@ import { csvMoney, toCsv, type CsvCell } from './csv';
 function shopName(shops: readonly Shop[], id: string | null): string {
   return (id && shops.find((s) => s.id === id)?.name) || '';
 }
+
+/** CSV date cell: DD/MM/YYYY (empty stays empty). */
+const au = (d: string | null | undefined): string => (d ? formatDateAU(d) : '');
 
 const byDate = <T>(get: (x: T) => string) => (a: T, b: T) => (get(a) < get(b) ? -1 : get(a) > get(b) ? 1 : 0);
 
@@ -21,7 +24,7 @@ export function itemsCsv(data: BusinessData): string {
     .sort((a, b) => (a.sku < b.sku ? -1 : a.sku > b.sku ? 1 : 0))
     .map((i) => [
       i.sku, i.title, i.brand, i.department, i.itemType, i.size, i.status, shopName(data.shops, i.shopId),
-      i.purchaseDate, csvMoney(i.cost), i.listedDate, csvMoney(i.firstListPrice), i.adRate, i.onlineOrderNo,
+      au(i.purchaseDate), csvMoney(i.cost), au(i.listedDate), csvMoney(i.firstListPrice), i.adRate, i.onlineOrderNo,
       storageFor(i.sku, data.storage),
     ]);
   return toCsv([header, ...rows]);
@@ -40,9 +43,9 @@ export function salesCsv(data: BusinessData): string {
       const it = itemById.get(oi.itemId);
       const refund = data.returns.filter((r) => r.itemId === oi.itemId && (r.orderId == null || r.orderId === o.id)).reduce((a, r) => a + r.refundAmount, 0);
       rows.push([
-        o.soldDate, o.orderNo, it?.sku ?? '', it?.title ?? '', it?.status ?? '', csvMoney(oi.salePrice),
+        au(o.soldDate), o.orderNo, it?.sku ?? '', it?.title ?? '', it?.status ?? '', csvMoney(oi.salePrice),
         csvMoney(oi.allocPostage), csvMoney(oi.allocProtection), csvMoney(oi.adFee), csvMoney(oi.allocTotal),
-        csvMoney(ebayEarnings(oi)), csvMoney(it?.cost ?? null), it ? csvMoney(itemProfit(it, oi)) : '', o.postedDate,
+        csvMoney(ebayEarnings(oi)), csvMoney(it?.cost ?? null), it ? csvMoney(itemProfit(it, oi)) : '', au(o.postedDate),
         o.trackingNo, refund ? csvMoney(round2(refund)) : '',
       ]);
     }
@@ -54,7 +57,7 @@ export function expensesCsv(data: BusinessData): string {
   const header = ['Date', 'What', 'Category', 'Amount', 'Receipt photo'];
   const rows: CsvCell[][] = [...data.expenses]
     .sort(byDate((e) => e.expenseDate))
-    .map((e) => [e.expenseDate, e.description, e.category, csvMoney(e.amount), e.receiptPath ? 'Yes' : 'No']);
+    .map((e) => [au(e.expenseDate), e.description, e.category, csvMoney(e.amount), e.receiptPath ? 'Yes' : 'No']);
   return toCsv([header, ...rows]);
 }
 
@@ -63,7 +66,7 @@ export function tripsCsv(data: BusinessData): string {
   const rows: CsvCell[][] = [...data.trips].sort(byDate((t) => t.tripDate)).map((t) => {
     const count = (o: string) => t.lines.filter((l) => l.outcome === o).reduce((a, l) => a + l.qty, 0);
     return [
-      t.tripDate, shopName(data.shops, t.shopId), csvMoney(t.total), t.lines.reduce((a, l) => a + l.qty, 0),
+      au(t.tripDate), shopName(data.shops, t.shopId), csvMoney(t.total), t.lines.reduce((a, l) => a + l.qty, 0),
       count('listed'), count('family'), count('keeping'), count('faulty'), count('to_list'), t.notes,
     ];
   });
@@ -122,7 +125,7 @@ export function taxDetailCsv(data: BusinessData, fy: number): string {
       date: s.order.soldDate,
       order: 0,
       cells: [
-        s.order.soldDate, 'Sale', s.item.sku, s.item.title, csvMoney(oi.salePrice), csvMoney(oi.allocProtection),
+        au(s.order.soldDate), 'Sale', s.item.sku, s.item.title, csvMoney(oi.salePrice), csvMoney(oi.allocProtection),
         csvMoney(oi.allocPostage), csvMoney(oi.adFee), csvMoney(s.earnings), csvMoney(s.item.cost ?? 0),
         csvMoney(s.profit), '', '',
       ],
@@ -133,7 +136,7 @@ export function taxDetailCsv(data: BusinessData, fy: number): string {
     rows.push({
       date: e.expenseDate,
       order: 1,
-      cells: [e.expenseDate, 'Expense', '', e.description, '', '', '', '', '', '', '', e.category, csvMoney(e.amount)],
+      cells: [au(e.expenseDate), 'Expense', '', e.description, '', '', '', '', '', '', '', e.category, csvMoney(e.amount)],
     });
   }
   rows.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.order - b.order));

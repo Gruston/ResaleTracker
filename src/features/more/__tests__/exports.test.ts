@@ -89,7 +89,7 @@ describe('salesCsv', () => {
 describe('expensesCsv and tripsCsv', () => {
   it('lists expenses oldest first', () => {
     const rows = parseCsv(expensesCsv(small()));
-    expect(col(rows, 'Date')).toEqual(['2026-05-30', '2026-08-01']);
+    expect(col(rows, 'Date')).toEqual(['30/05/2026', '01/08/2026']);
     expect(col(rows, 'Amount')).toEqual(['10.00', '24.50']);
     expect(col(rows, 'Receipt photo')).toEqual(['No', 'No']);
   });
@@ -137,7 +137,7 @@ describe('taxDetailCsv', () => {
   it('has one row per sale and per expense in the year, oldest first, and nothing from other years', () => {
     const rows = parseCsv(taxDetailCsv(small(), 2026));
     expect(col(rows, 'Type')).toEqual(['Expense', 'Sale']);
-    expect(col(rows, 'Date')).toEqual(['2026-08-01', '2026-08-10']);
+    expect(col(rows, 'Date')).toEqual(['01/08/2026', '10/08/2026']);
     expect(col(rows, 'Expense category')).toEqual(['Packaging', '']);
     expect(col(rows, 'Amount')).toEqual(['24.50', '']);
     expect(col(rows, 'SKU')).toEqual(['', 'WD-001']);

@@ -6,9 +6,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Field, Icon, Sheet } from '@/components';
 import { useSignedUrl } from '@/data';
-import { addDays, formatDate, today } from '@/domain/dates';
 import { colors, radius } from '@/theme';
-import { isValidDate } from './forms';
 
 /** Red/orange error line under a form. Announced to screen readers. */
 export function ErrorText({ children }: { children?: string | null }) {
@@ -63,33 +61,6 @@ export function ConfirmSheet({
       <Button label={confirmLabel} variant="danger" loading={busy} onPress={onConfirm} />
       <Button label={cancelLabel} variant="secondary" onPress={onCancel} />
     </Sheet>
-  );
-}
-
-/** Date typed as YYYY-MM-DD with day-step and Today buttons (no native date picker needed). */
-export function DateField({ label = 'Date', value, onChange }: { label?: string; value: string; onChange: (v: string) => void }) {
-  const valid = isValidDate(value);
-  const step = (n: number) => onChange(addDays(valid ? value : today(), n));
-  return (
-    <View style={{ marginBottom: 12 }}>
-      <Field
-        label={label}
-        value={value}
-        onChangeText={onChange}
-        placeholder="YYYY-MM-DD"
-        keyboardType="numbers-and-punctuation"
-        autoCorrect={false}
-        maxLength={10}
-        error={value && !valid ? 'Use the form YYYY-MM-DD, like 2026-11-14' : null}
-        hint={valid ? formatDate(value) : undefined}
-        style={{ marginBottom: 6 }}
-      />
-      <View style={styles.wrapRow}>
-        <Button label="Earlier" accessibilityLabel="One day earlier" variant="secondary" size="small" onPress={() => step(-1)} />
-        <Button label="Later" accessibilityLabel="One day later" variant="secondary" size="small" onPress={() => step(1)} />
-        <Button label="Today" variant="secondary" size="small" onPress={() => onChange(today())} />
-      </View>
-    </View>
   );
 }
 

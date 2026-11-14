@@ -108,7 +108,7 @@ export interface SaleFormResult {
 /** Validates the record-sale form. Mismatched totals are NOT an error (she can save anyway). */
 export function validateSaleForm(f: SaleFormValues): SaleFormResult {
   const errors: SaleFormErrors = { prices: {} };
-  if (!isValidDate(f.soldDate.trim())) errors.soldDate = 'Use the format YYYY-MM-DD';
+  if (!isValidDate(f.soldDate.trim())) errors.soldDate = 'Use DD/MM/YYYY, like 14/11/2026';
 
   const orderTotal = parseAmount(f.orderTotal);
   if (orderTotal == null || orderTotal <= 0) errors.orderTotal = 'Enter what the buyer paid';
