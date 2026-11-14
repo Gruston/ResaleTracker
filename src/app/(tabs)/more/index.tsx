@@ -8,6 +8,7 @@ import { formatMoney, sumMoney } from '@/domain';
 import { addMemberErrorText, isLikelyEmail } from '@/features/more/forms';
 import { ConfirmSheet, ErrorText, Note } from '@/features/more/ui';
 import { colors } from '@/theme';
+import { versionText } from '@/lib/version';
 
 export default function MoreScreen() {
   const { data } = useBusinessData();
@@ -77,6 +78,7 @@ export default function MoreScreen() {
         ) : (
           <Row title="Signed in as" subtitle={email ?? 'Unknown'} />
         )}
+        <Row title="App version" subtitle={versionText()} />
       </ListGroup>
       {demo ? null : <Button label="Sign out" variant="danger" onPress={() => setSignOutOpen(true)} />}
 
