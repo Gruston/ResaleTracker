@@ -25,8 +25,7 @@ const BIZ = 'biz-sample';
 
 const settings: Settings = {
   businessId: BIZ,
-  protectionFixed: 0.75,
-  protectionPct: 5,
+  protectionFixed: 0.3,
   defaultAdRate: 3,
   adFeeBase: 'item',
   defaultLabelCost: 12.5,

@@ -129,20 +129,20 @@ describe('storage', () => {
 describe('fee settings form', () => {
   it('round trips the settings', () => {
     const f = feeFormFrom(settings);
-    expect(f).toEqual({ protectionFixed: '0.75', protectionPct: '5', defaultAdRate: '3', adFeeBase: 'item', defaultLabelCost: '12.5' });
+    expect(f).toEqual({ protectionFixed: '0.3', defaultAdRate: '3', adFeeBase: 'item', defaultLabelCost: '12.5' });
     const r = parseFeeForm(f);
     expect(r).toEqual({
       ok: true,
-      patch: { protectionFixed: 0.75, protectionPct: 5, defaultAdRate: 3, adFeeBase: 'item', defaultLabelCost: 12.5 },
+      patch: { protectionFixed: 0.3, defaultAdRate: 3, adFeeBase: 'item', defaultLabelCost: 12.5 },
     });
   });
 
   it('reports errors per field', () => {
-    const r = parseFeeForm({ ...feeFormFrom(settings), protectionFixed: '', protectionPct: '500', defaultAdRate: 'x' });
+    const r = parseFeeForm({ ...feeFormFrom(settings), protectionFixed: '', defaultAdRate: '500', defaultLabelCost: 'x' });
     expect(r.ok).toBe(false);
     if (r.ok) return;
-    expect(Object.keys(r.errors).sort()).toEqual(['defaultAdRate', 'protectionFixed', 'protectionPct']);
-    expect(r.errors.protectionPct).toMatch(/too high/);
+    expect(Object.keys(r.errors).sort()).toEqual(['defaultAdRate', 'defaultLabelCost', 'protectionFixed']);
+    expect(r.errors.defaultAdRate).toMatch(/too high/);
   });
 
   it('accepts the ad fee base choice', () => {

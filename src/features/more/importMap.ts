@@ -1,6 +1,6 @@
 // Pure helpers for "Load your sales history": guess which CSV column is which, read money and dates the way
 // eBay Seller Hub and spreadsheets write them, and turn one CSV row into an item plus a sale.
-import { protectionFor, round2 } from '@/domain/money';
+import { itemPriceFromPriceWithProtection, protectionFor, round2 } from '@/domain/money';
 import type { Department, Settings, Shop, SkuCode } from '@/domain/types';
 
 export type ImportField =
@@ -365,13 +365,12 @@ export function planRow(row: readonly string[], mapping: ColumnMapping, ctx: Imp
     notes.push(`Postage estimated at the typical label cost`);
   }
   if (salePrice === null) {
-    // Work back from the order total: total = price + postage + fixed + pct% x (price + postage)
+    // Work back from the order total: total = price + postage + buyer protection(price)
     const t = orderTotal as number;
     if (protection !== null) {
       salePrice = round2(t - postage - protection);
     } else {
-      const base = (t - s.protectionFixed) / (1 + s.protectionPct / 100);
-      salePrice = round2(base - postage);
+      salePrice = round2(itemPriceFromPriceWithProtection(t - postage, s));
       protection = round2(t - salePrice - postage);
       notes.push('Sale price worked out from the order total');
     }

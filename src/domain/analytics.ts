@@ -12,7 +12,7 @@ import {
   seasonStartYear,
 } from './dates';
 import type { Season } from './dates';
-import { adFeeFor, ebayEarnings, itemProfit, round2, sumMoney } from './money';
+import { protectionFor, adFeeFor, ebayEarnings, itemProfit, round2, sumMoney } from './money';
 import { salesByItem } from './orders';
 import type { BusinessData, Department, Item, Order, OrderItem, Settings } from './types';
 
@@ -635,7 +635,7 @@ export function whatIf(
 ): WhatIfResult[] {
   const adRate = item.adRate ?? s.defaultAdRate;
   const results = scenarios.map((sc) => {
-    const protection = s.protectionFixed + (s.protectionPct / 100) * (sc.listPrice + sc.postageCharged);
+    const protection = protectionFor(sc.listPrice, sc.postageCharged, s);
     const adFee = adFeeFor(sc.listPrice, sc.postageCharged, adRate, s);
     const buyerPays = sc.listPrice + sc.postageCharged + protection;
     const earnings = buyerPays - protection - s.defaultLabelCost - adFee;

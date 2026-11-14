@@ -41,8 +41,7 @@ function strOrNull(v: unknown): string | null {
 export function settingsFromRow(r: Row): Settings {
   return {
     businessId: r.business_id,
-    protectionFixed: num(r.protection_fixed, 0.75),
-    protectionPct: num(r.protection_pct, 5),
+    protectionFixed: num(r.protection_fixed, 0.3),
     defaultAdRate: num(r.default_ad_rate, 3),
     adFeeBase: (r.ad_fee_base ?? 'item') as AdFeeBase,
     defaultLabelCost: num(r.default_label_cost, 12.5),
@@ -51,7 +50,6 @@ export function settingsFromRow(r: Row): Settings {
 export function settingsToRow(s: Partial<Settings>): Row {
   const out: Row = {};
   if (s.protectionFixed !== undefined) out.protection_fixed = s.protectionFixed;
-  if (s.protectionPct !== undefined) out.protection_pct = s.protectionPct;
   if (s.defaultAdRate !== undefined) out.default_ad_rate = s.defaultAdRate;
   if (s.adFeeBase !== undefined) out.ad_fee_base = s.adFeeBase;
   if (s.defaultLabelCost !== undefined) out.default_label_cost = s.defaultLabelCost;

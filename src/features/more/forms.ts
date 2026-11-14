@@ -102,7 +102,6 @@ export function sortStorage(storage: readonly StorageLocation[]): StorageLocatio
 
 export interface FeeForm {
   protectionFixed: string;
-  protectionPct: string;
   defaultAdRate: string;
   adFeeBase: AdFeeBase;
   defaultLabelCost: string;
@@ -112,14 +111,13 @@ export function feeFormFrom(s: Settings): FeeForm {
   const t = (n: number) => String(Math.round(n * 10000) / 10000);
   return {
     protectionFixed: t(s.protectionFixed),
-    protectionPct: t(s.protectionPct),
     defaultAdRate: t(s.defaultAdRate),
     adFeeBase: s.adFeeBase,
     defaultLabelCost: t(s.defaultLabelCost),
   };
 }
 
-export type FeeErrors = Partial<Record<'protectionFixed' | 'protectionPct' | 'defaultAdRate' | 'defaultLabelCost', string>>;
+export type FeeErrors = Partial<Record<'protectionFixed' | 'defaultAdRate' | 'defaultLabelCost', string>>;
 
 /** Parse the form. Returns the settings patch, or per-field errors. */
 export function parseFeeForm(
@@ -139,11 +137,10 @@ export function parseFeeForm(
     return v;
   };
   const protectionFixed = num('protectionFixed', f.protectionFixed, 100, 'dollars');
-  const protectionPct = num('protectionPct', f.protectionPct, 100, 'a percentage');
   const defaultAdRate = num('defaultAdRate', f.defaultAdRate, 100, 'a percentage');
   const defaultLabelCost = num('defaultLabelCost', f.defaultLabelCost, 1000, 'dollars');
   if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, patch: { protectionFixed, protectionPct, defaultAdRate, adFeeBase: f.adFeeBase, defaultLabelCost } };
+  return { ok: true, patch: { protectionFixed, defaultAdRate, adFeeBase: f.adFeeBase, defaultLabelCost } };
 }
 
 // ---------------------------------------------------------------------------

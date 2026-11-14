@@ -266,9 +266,9 @@ describe('planRow', () => {
     const r = planRow(row({ Postage: '', 'Buyer protection': '', 'Order total': '' }), tm, ctx);
     if (!r.ok) throw new Error('expected ok');
     expect(r.plan.sale.postage).toBe(12.5);
-    // 0.75 + 5% x (82 + 12.5) = 5.475 -> 5.48
-    expect(r.plan.sale.buyerProtection).toBe(5.48);
-    expect(r.plan.sale.orderTotal).toBe(99.98);
+    // 0.30 + 8% x 20 + 6% x 62 = 5.62
+    expect(r.plan.sale.buyerProtection).toBe(5.62);
+    expect(r.plan.sale.orderTotal).toBe(100.12);
     expect(r.plan.notes.join(' ')).toMatch(/estimated/);
   });
 
@@ -279,11 +279,11 @@ describe('planRow', () => {
   });
 
   it('works back from the order total when there is no sale price', () => {
-    // total = (price + postage) * 1.05 + 0.75  ->  price + postage = (100.60 - 0.75) / 1.05 = 95.095..
+    // total = price + postage + 0.30 + 1.60 + 6% x (price - 20)  ->  1.06 x price = 100.60 - 12.50 - 0.70
     const r = planRow(row({ 'Sale price': '', 'Buyer protection': '' }), tm, ctx);
     if (!r.ok) throw new Error('expected ok');
     expect(r.plan.sale.postage).toBe(12.5);
-    expect(r.plan.sale.salePrice).toBeCloseTo(82.6, 1);
+    expect(r.plan.sale.salePrice).toBeCloseTo(82.45, 2);
     const s = r.plan.sale;
     expect(s.salePrice + s.postage + s.buyerProtection).toBeCloseTo(100.6, 2);
     expect(r.plan.notes.join(' ')).toMatch(/worked out/);

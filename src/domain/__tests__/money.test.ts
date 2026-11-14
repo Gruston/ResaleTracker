@@ -1,5 +1,5 @@
 /// <reference types="jest" />
-import {
+import { itemPriceFromPriceWithProtection,
   adFeeFor, buyerSeesAbout, ebayEarnings, formatMoney, formatMoney0, itemProfit, protectionFor, round2, sumMoney, youGetAbout,
 } from '../money';
 import { item, settings } from '../testUtils';
@@ -57,9 +57,23 @@ describe('formatMoney0', () => {
 });
 
 describe('fees', () => {
-  it('protectionFor = fixed + pct% x (price + postage)', () => {
-    expect(protectionFor(63.4, 12.5, settings)).toBeCloseTo(4.545, 6);
-    expect(protectionFor(0, 0, settings)).toBe(0.75);
+  it('protectionFor = $0.30 + eBay AU tiers on the item price (postage ignored)', () => {
+    expect(protectionFor(63.4, 12.5, settings)).toBeCloseTo(0.3 + 1.6 + 0.06 * 43.4, 6);
+    expect(protectionFor(0, 0, settings)).toBe(0);
+  });
+  it("matches eBay's published examples", () => {
+    // https://www.ebay.com.au/help/buying/paying-items/buyer-protection-fee?id=5594
+    expect(round2(protectionFor(10, 0, settings))).toBe(1.1);
+    expect(round2(protectionFor(38, 0, settings))).toBe(2.98);
+    expect(round2(protectionFor(60, 0, settings))).toBe(4.3);
+    expect(round2(protectionFor(2500, 0, settings))).toBe(110.7);
+    expect(round2(protectionFor(7500, 0, settings))).toBe(210.7);
+    expect(round2(10 + protectionFor(10, 0, settings))).toBe(11.1);
+    expect(round2(38 + protectionFor(38, 0, settings))).toBe(40.98);
+  });
+  it('itemPriceFromPriceWithProtection inverts price + protection', () => {
+    expect(round2(itemPriceFromPriceWithProtection(40.98, settings))).toBe(38);
+    expect(round2(itemPriceFromPriceWithProtection(2610.7, settings))).toBe(2500);
   });
   it('adFeeFor uses the item price by default', () => {
     expect(adFeeFor(100, 12.5, 3, settings)).toBeCloseTo(3, 10);
@@ -76,9 +90,9 @@ describe('fees', () => {
     expect(youGetAbout(100, 5, { ...settings, adFeeBase: 'item_plus_postage' })).toBeCloseTo(100 - 5.625, 10);
   });
   it('buyerSeesAbout = price + protection + postage (default label cost)', () => {
-    // 60 + (0.75 + 5% x 72.5) + 12.5
-    expect(buyerSeesAbout(60, settings)).toBeCloseTo(60 + 4.375 + 12.5, 10);
-    expect(buyerSeesAbout(60, settings, 0)).toBeCloseTo(60 + 0.75 + 3, 10);
+    // 60 + (0.30 + 8% x 20 + 6% x 40) + 12.5
+    expect(buyerSeesAbout(60, settings)).toBeCloseTo(60 + 4.3 + 12.5, 10);
+    expect(buyerSeesAbout(60, settings, 0)).toBeCloseTo(60 + 4.3, 10);
   });
 });
 

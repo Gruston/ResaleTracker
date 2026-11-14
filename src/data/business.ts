@@ -27,8 +27,7 @@ export function emptyBusinessData(businessId = ''): BusinessData {
   return {
     settings: {
       businessId,
-      protectionFixed: 0.75,
-      protectionPct: 5,
+      protectionFixed: 0.3,
       defaultAdRate: 3,
       adFeeBase: 'item',
       defaultLabelCost: 12.5,

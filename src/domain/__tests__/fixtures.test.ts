@@ -11,7 +11,7 @@ describe('sampleData', () => {
     expect(d.expenses).toHaveLength(5);
     expect(d.returns).toHaveLength(1);
     expect(d.shops.map((s) => s.name)).toContain('My wardrobe');
-    expect(d.settings).toMatchObject({ protectionFixed: 0.75, protectionPct: 5, defaultAdRate: 3, adFeeBase: 'item', defaultLabelCost: 12.5 });
+    expect(d.settings).toMatchObject({ protectionFixed: 0.3, defaultAdRate: 3, adFeeBase: 'item', defaultLabelCost: 12.5 });
     expect(SAMPLE_TODAY).toBe('2026-11-14');
   });
 

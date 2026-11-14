@@ -55,21 +55,16 @@ export default function FeesScreen() {
       </Note>
       <Card>
         <Field
-          label="Buyer protection: fixed ($)"
+          label="Buyer protection: flat fee per item ($)"
           value={f.protectionFixed}
           onChangeText={(t) => set('protectionFixed', t)}
           keyboardType="decimal-pad"
           prefix="$"
           error={errors.protectionFixed}
         />
-        <Field
-          label="Buyer protection: % of item + postage"
-          value={f.protectionPct}
-          onChangeText={(t) => set('protectionPct', t)}
-          keyboardType="decimal-pad"
-          suffix="%"
-          error={errors.protectionPct}
-        />
+        <Note>
+          Plus eBay's tiers on the item price (not postage): 8% of the first $20, 6% from $20 to $500, 4% from $500 to $5,000, nothing above. Paid by the buyer, GST included. Example: a $38 item has $2.98 buyer protection, so the buyer sees $40.98 + postage.
+        </Note>
         <Field
           label="Default ad rate (%)"
           value={f.defaultAdRate}

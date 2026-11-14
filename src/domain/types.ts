@@ -12,8 +12,7 @@ export type AdFeeBase = 'item' | 'item_plus_postage';
 
 export interface Settings {
   businessId: string;
-  protectionFixed: number; // $
-  protectionPct: number; // % of item + postage
+  protectionFixed: number; // $ flat part of eBay AU Buyer Protection (0.30); the % tiers are fixed, see money.ts
   defaultAdRate: number; // %
   adFeeBase: AdFeeBase;
   defaultLabelCost: number; // $

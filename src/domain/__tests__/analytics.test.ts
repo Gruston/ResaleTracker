@@ -477,7 +477,7 @@ describe('whatIf', () => {
   ];
   it('computes buyerPays, protection, ad, earnings, keep', () => {
     const [a] = whatIf(item1, scenarios, settings);
-    expect(a.protection).toBeCloseTo(0.75 + 0.05 * 72.5, 10);
+    expect(a.protection).toBeCloseTo(4.3, 10);
     expect(a.buyerPays).toBeCloseTo(60 + 12.5 + a.protection, 10);
     expect(a.adFee).toBeCloseTo(3, 10);
     expect(a.earnings).toBeCloseTo(60 + 12.5 - 12.5 - 3, 10); // label 12.50 either way
@@ -486,7 +486,7 @@ describe('whatIf', () => {
   it('free postage means the label comes out of your pocket', () => {
     const b = whatIf(item1, scenarios, settings)[1];
     expect(b.earnings).toBeCloseTo(70 - 12.5 - 3.5, 10);
-    expect(b.buyerPays).toBeCloseTo(70 + 0.75 + 3.5, 10);
+    expect(b.buyerPays).toBeCloseTo(70 + 4.9, 10);
   });
   it('flags exactly one best scenario (highest keep)', () => {
     const r = whatIf(item1, scenarios, settings);

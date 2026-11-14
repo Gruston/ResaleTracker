@@ -4,8 +4,7 @@ import type { BusinessData, Expense, Item, Order, Return, Settings, Trip, TripLi
 
 export const settings: Settings = {
   businessId: 'b1',
-  protectionFixed: 0.75,
-  protectionPct: 5,
+  protectionFixed: 0.3,
   defaultAdRate: 3,
   adFeeBase: 'item',
   defaultLabelCost: 12.5,
