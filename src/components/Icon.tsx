@@ -14,7 +14,8 @@ export type IconName =
   | 'plus'
   | 'check'
   | 'close'
-  | 'spark';
+  | 'spark'
+  | 'calendar';
 
 export interface IconProps {
   name: IconName;
@@ -104,5 +105,7 @@ function glyph(name: IconName) {
       return <Path d="M6 6l12 12M18 6L6 18" />;
     case 'spark':
       return <Path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6" />;
+    case 'calendar':
+      return <Path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5" />;
   }
 }
