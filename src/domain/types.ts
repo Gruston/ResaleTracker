@@ -1,7 +1,7 @@
 // Shared types. Mirror supabase/migrations/*_init.sql (snake_case columns -> camelCase here).
 // The data layer (src/data) maps rows <-> these types. Money values are numbers in AUD dollars.
 
-export type Department = 'Women' | 'Men' | 'Kids';
+export type Department = 'Women' | 'Men' | 'Kids' | 'Unisex';
 export type ItemStatus = 'draft' | 'listed' | 'sold' | 'posted' | 'returned' | 'faulty';
 export type LineOutcome = 'to_list' | 'listed' | 'family' | 'keeping' | 'faulty';
 export type ShopKind = 'shop' | 'online' | 'wardrobe';

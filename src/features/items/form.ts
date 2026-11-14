@@ -4,7 +4,7 @@ import type { Department, Item, ItemStatus, Settings, Shop, SkuCode } from '../.
 import type { ItemPatch, NewItemInput } from '../../data/mutations/items';
 
 export const TITLE_MAX = 80;
-export const DEPARTMENTS: Department[] = ['Women', 'Men', 'Kids'];
+export const DEPARTMENTS: Department[] = ['Women', 'Men', 'Kids', 'Unisex'];
 
 export interface PhotoDraft {
   /** Existing photo row id, or a temporary key for a newly picked photo */

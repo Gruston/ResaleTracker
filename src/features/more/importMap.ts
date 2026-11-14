@@ -216,6 +216,7 @@ export function normalizeDepartment(raw: string | null | undefined): Department 
     return s === 'girl' || s === 'girls' ? 'Kids' : 'Women';
   }
   if (['m', 'men', 'mens', 'man', 'male', 'gents', 'boy', 'boys'].includes(s)) return s === 'boy' || s === 'boys' ? 'Kids' : 'Men';
+  if (['u', 'unisex', 'uni', 'neutral', 'genderneutral', 'allgenders'].includes(s)) return 'Unisex';
   if (['k', 'kid', 'kids', 'child', 'children', 'childrens', 'infant', 'baby', 'toddler'].includes(s)) return 'Kids';
   return null;
 }

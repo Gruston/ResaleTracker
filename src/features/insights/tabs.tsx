@@ -150,6 +150,7 @@ const DEPT_OPTIONS: { value: Dept; label: string }[] = [
   { value: 'Women', label: 'Women' },
   { value: 'Men', label: 'Men' },
   { value: 'Kids', label: 'Kids' },
+  { value: 'Unisex', label: 'Unisex' },
 ];
 
 export function WhatSellsTab({ data, today }: TabProps) {
@@ -157,7 +158,7 @@ export function WhatSellsTab({ data, today }: TabProps) {
   const d: Department | undefined = dept === 'All' ? undefined : dept;
   const types = useMemo(() => byItemType(data, d), [data, d]);
   const sizes = useMemo(() => {
-    const depts: Department[] = d ? [d] : ['Women', 'Men', 'Kids'];
+    const depts: Department[] = d ? [d] : ['Women', 'Men', 'Kids', 'Unisex'];
     return depts.map((x) => ({ dept: x, sizes: bySize(data, x) })).filter((x) => x.sizes.length);
   }, [data, d]);
   const heat = useMemo(() => typeByMonthFor(data, chartMonths(today), d), [data, today, d]);

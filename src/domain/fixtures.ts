@@ -36,6 +36,7 @@ const skuCodes: SkuCode[] = [
   { kind: 'department', label: 'Women', code: 'W', sort: 1 },
   { kind: 'department', label: 'Men', code: 'M', sort: 2 },
   { kind: 'department', label: 'Kids', code: 'K', sort: 3 },
+  { kind: 'department', label: 'Unisex', code: 'U', sort: 4 },
   ...(
     [
       ['Dress', 'D'], ['Top', 'T'], ['Shirt', 'S'], ['Cardigan', 'C'], ['Jumper', 'J'], ['Jacket', 'K'],
@@ -60,6 +61,7 @@ const storage: StorageLocation[] = [
   ['W', "Rack C · other women's"],
   ['M', "Shelf 5 · men's"],
   ['K', "Shelf 6 · kids'"],
+  ['U', 'Shelf 7 · unisex'],
 ].map(([prefix, location]) => ({ prefix, location }));
 
 const SHOP_IDS = {

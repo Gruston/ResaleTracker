@@ -70,7 +70,7 @@ export function seasonTipText(tip: SeasonTip): SeasonTipText {
   };
 }
 
-export type Dept = 'All' | 'Women' | 'Men' | 'Kids';
+export type Dept = 'All' | 'Women' | 'Men' | 'Kids' | 'Unisex';
 
 export function bestTypeSentence(types: ItemTypeStat[], dept: Dept): string | null {
   const best = types[0];
