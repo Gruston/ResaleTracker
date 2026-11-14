@@ -37,7 +37,7 @@ Prompt: "Create a Supabase Edge Function `ai` (Deno) that authenticates the call
 
 ### B2 Listing writer and price suggestion
 Owns: `src/features/items/ai.ts`, `src/features/items/AiListingButton.tsx`, small edits in `src/features/items/ItemForm.tsx`, `src/data/ai.ts` (new).
-Prompt: "Replace the disabled 'Write listing with AI · Coming soon' button with a working one calling the `ai` function (`listing` then `price`). Show a sheet with the suggested title (80-char counter), description and price range with reasoning; buttons Use / Use title only / Cancel. Needs at least one photo uploaded first; explain if not. Loading and error states in Kat's words. Demo mode: return canned suggestions."
+Prompt: "Replace the disabled 'Write listing with AI · Coming soon' button with a working one calling the `ai` function (`listing` then `price`). Show a sheet with the suggested title (80-char counter), description and price range with reasoning; buttons Use (fills the item form), Copy title, Copy description (expo-clipboard if bundled in Expo Go, else Share sheet) so Kat pastes into eBay herself. The app never posts to eBay. Needs at least one photo uploaded first; explain if not. Loading and error states in Kat's words. Demo mode: return canned suggestions."
 
 ### B3 Receipt reader
 Owns: `src/features/trips/receipt*.ts(x)`, small edits in `src/features/trips/TripForm.tsx`.
@@ -49,17 +49,19 @@ Prompt: "Show 'AI helpers: N used today of M' in More, and a friendly message wh
 
 ---
 
-## Phase C – eBay sync
+## Phase C – eBay sync (read-only)
+
+**Principle: Kat creates and edits listings in eBay. The app only reads from eBay (listings, orders, fees, tracking) and never posts, edits or ends anything there.** Request read-only OAuth scopes only.
 
 Prerequisite (people, not code): eBay developer account and production keyset approved; decide whose account. Confirm in eBay's docs which APIs give order totals, Buyer Protection, postage label cost, promoted listing (ad) fees and tracking for Australian private sellers, and how far back order history is available.
 
 ### C1 eBay connection (OAuth)
 Owns: `supabase/functions/ebay-auth/`, migration `ebay_connections` (business_id, refresh token encrypted/stored server-side only, scopes, expires), More › eBay account.
-Prompt: "Implement eBay OAuth (authorization code grant) via an Edge Function: start URL opened with expo-web-browser's auth session, callback handled by the function, tokens stored server-side with RLS denying client reads. More shows Connected as <eBay user> / Disconnect."
+Prompt: "Implement read-only eBay OAuth (authorization code grant, read-only scopes only) via an Edge Function: start URL opened with expo-web-browser's auth session, callback handled by the function, tokens stored server-side with RLS denying client reads. More shows Connected as <eBay user> / Disconnect."
 
 ### C2 Import active listings
 Owns: `supabase/functions/ebay-sync/` (listings part), items mapping helpers in `src/domain/ebay.ts`.
-Prompt: "Pull the seller's active listings and create or update items: title, first listing price, listed date, eBay listing id, photos (store URLs), SKU from eBay custom label when it matches our format, else assign a new SKU and write it back as the custom label if the API allows. Items get status 'listed' and cost null (flagged 'missing a cost')."
+Prompt: "Pull the seller's active listings and create or update items: title, first listing price, listed date, eBay listing id, photos (store URLs), SKU from the eBay Custom label (SKU) field that Kat types when listing; if it is empty or unknown, create the item with a new SKU and flag it so Kat can add that SKU to the listing in eBay herself. Never write to eBay. Items get status 'listed' and cost null (flagged 'missing a cost')."
 
 ### C3 Orders, fees, tracking
 Owns: `ebay-sync` (orders part), `src/domain/ebay.ts`.
