@@ -23,8 +23,8 @@ import {
 const codes: SkuCode[] = [
   { kind: 'department', label: 'Women', code: 'W', sort: 1 },
   { kind: 'department', label: 'Men', code: 'M', sort: 2 },
-  { kind: 'item_type', label: 'Dress', code: 'D', sort: 1 },
-  { kind: 'item_type', label: 'Top', code: 'T', sort: 2 },
+  { kind: 'item_type', label: 'Dress', code: 'DR', sort: 1 },
+  { kind: 'item_type', label: 'Top', code: 'TO', sort: 2 },
 ];
 
 describe('amounts and dates', () => {
@@ -71,8 +71,8 @@ describe('SKU codes', () => {
     expect(cleanCode(' sw ')).toBe('SW');
   });
 
-  it('item type codes are 1-2 capital letters', () => {
-    expect(ITEM_TYPE_CODE_RE.test('A')).toBe(true);
+  it('item type codes are exactly 2 capital letters', () => {
+    expect(ITEM_TYPE_CODE_RE.test('A')).toBe(false);
     expect(ITEM_TYPE_CODE_RE.test('AB')).toBe(true);
     expect(ITEM_TYPE_CODE_RE.test('ABC')).toBe(false);
     expect(ITEM_TYPE_CODE_RE.test('a')).toBe(false);
@@ -83,13 +83,14 @@ describe('SKU codes', () => {
   it('validates new and edited codes for format and uniqueness', () => {
     expect(validateCode('item_type', 'SW', codes)).toBeNull();
     expect(validateCode('item_type', 'sw', codes)).toMatch(/capital/);
-    expect(validateCode('item_type', 'ABC', codes)).toMatch(/1 or 2/);
-    expect(validateCode('item_type', '', codes)).toMatch(/1 or 2/);
-    expect(validateCode('item_type', 'D', codes)).toBe('D is already used for Dress');
-    expect(validateCode('item_type', 'D', codes, 'Dress')).toBeNull(); // unchanged
-    expect(validateCode('item_type', 'T', codes, 'Dress')).toBe('T is already used for Top');
-    // department W does not clash with an item type W
-    expect(validateCode('item_type', 'W', codes)).toBeNull();
+    expect(validateCode('item_type', 'ABC', codes)).toMatch(/2 capital/);
+    expect(validateCode('item_type', '', codes)).toMatch(/2 capital/);
+    expect(validateCode('item_type', 'D', codes)).toMatch(/2 capital/);
+    expect(validateCode('item_type', 'DR', codes)).toBe('DR is already used for Dress');
+    expect(validateCode('item_type', 'DR', codes, 'Dress')).toBeNull(); // unchanged
+    expect(validateCode('item_type', 'TO', codes, 'Dress')).toBe('TO is already used for Top');
+    // department W does not clash with an item type starting W
+    expect(validateCode('item_type', 'WO', codes)).toBeNull();
     expect(validateCode('department', 'K', codes)).toBeNull();
     expect(validateCode('department', 'KK', codes)).toMatch(/one capital/);
     expect(validateCode('department', 'W', codes)).toMatch(/already/);

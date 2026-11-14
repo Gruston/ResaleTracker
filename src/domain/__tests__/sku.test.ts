@@ -6,19 +6,19 @@ const { skuCodes, storage } = sampleData;
 
 describe('skuPrefix', () => {
   it('joins department and item-type codes', () => {
-    expect(skuPrefix('Women', 'Dress', skuCodes)).toBe('WD');
-    expect(skuPrefix('Men', 'Shoes', skuCodes)).toBe('MF');
-    expect(skuPrefix('Kids', 'Jacket', skuCodes)).toBe('KK');
-    expect(skuPrefix('Women', 'Playsuit', skuCodes)).toBe('WU');
+    expect(skuPrefix('Women', 'Dress', skuCodes)).toBe('WDR');
+    expect(skuPrefix('Men', 'Shoes', skuCodes)).toBe('MSO');
+    expect(skuPrefix('Kids', 'Jacket', skuCodes)).toBe('KJA');
+    expect(skuPrefix('Women', 'Playsuit', skuCodes)).toBe('WPL');
   });
   it('uses X for unknown labels', () => {
     expect(skuPrefix('Women', 'Hat', skuCodes)).toBe('WX');
-    expect(skuPrefix('Pets', 'Dress', skuCodes)).toBe('XD');
+    expect(skuPrefix('Pets', 'Dress', skuCodes)).toBe('XDR');
     expect(skuPrefix('Women', 'Dress', [])).toBe('XX');
   });
   it('is not fooled by a department label equal to an item type label', () => {
     const codes = [{ kind: 'department' as const, label: 'Dress', code: 'Z', sort: 1 }, ...skuCodes];
-    expect(skuPrefix('Women', 'Dress', codes)).toBe('WD');
+    expect(skuPrefix('Women', 'Dress', codes)).toBe('WDR');
   });
 });
 
@@ -46,8 +46,8 @@ describe('formatSku', () => {
 
 describe('storageFor', () => {
   it('uses a full prefix match first', () => {
-    expect(storageFor('WD-014', storage)).toBe('Rack A · dresses, by colour');
-    expect(storageFor('WF-001', storage)).toBe('Box S1 · shoes');
+    expect(storageFor('WDR-014', storage)).toBe('Rack A · dresses, by colour');
+    expect(storageFor('WSO-001', storage)).toBe('Box S1 · shoes');
   });
   it('falls back to the department letter', () => {
     expect(storageFor('MJ-003', storage)).toBe("Shelf 5 · men's");
@@ -63,6 +63,6 @@ describe('storageFor', () => {
     expect(storageFor('', storage)).toBe('Not set');
   });
   it('accepts a bare prefix', () => {
-    expect(storageFor('WT', storage)).toBe('Shelf 2 · tops');
+    expect(storageFor('WTO', storage)).toBe('Shelf 2 · tops');
   });
 });

@@ -41,7 +41,7 @@ export function canArchive(shop: Pick<Shop, 'kind'>): boolean {
 // SKU codes and storage
 // ---------------------------------------------------------------------------
 
-export const ITEM_TYPE_CODE_RE = /^[A-Z]{1,2}$/;
+export const ITEM_TYPE_CODE_RE = /^[A-Z]{2}$/;
 export const DEPARTMENT_CODE_RE = /^[A-Z]$/;
 
 /** Upper-case and strip anything that is not a letter, so typing "d1" gives "D". */
@@ -61,7 +61,7 @@ export function validateCode(
 ): string | null {
   const re = kind === 'department' ? DEPARTMENT_CODE_RE : ITEM_TYPE_CODE_RE;
   if (!re.test(code)) {
-    return kind === 'department' ? 'Use one capital letter, like W' : 'Use 1 or 2 capital letters, like D or DR';
+    return kind === 'department' ? 'Use one capital letter, like W' : 'Use 2 capital letters, like DR';
   }
   const clash = codes.find((c) => c.kind === kind && c.code === code && c.label !== existingLabel);
   return clash ? `${code} is already used for ${clash.label}` : null;

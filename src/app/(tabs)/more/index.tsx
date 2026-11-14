@@ -34,7 +34,7 @@ export default function MoreScreen() {
       <SectionTitle>Lists</SectionTitle>
       <ListGroup>
         <Row title="Shops" subtitle={`${activeShops} regular ${activeShops === 1 ? 'shop' : 'shops'}`} onPress={() => router.push('/more/shops')} />
-        <Row title="SKU codes and storage" subtitle="e.g. WD = Women's dress → Rack A" onPress={() => router.push('/more/sku-codes')} />
+        <Row title="SKU codes and storage" subtitle="e.g. WDR = women's dress → Rack A" onPress={() => router.push('/more/sku-codes')} />
       </ListGroup>
 
       <SectionTitle>Money</SectionTitle>

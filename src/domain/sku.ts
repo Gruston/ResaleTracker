@@ -1,6 +1,6 @@
 import type { Department, SkuCode, StorageLocation } from './types';
 
-/** Department letter + item-type letter, e.g. ('Women','Dress') -> 'WD'. Unknown labels become 'X'. */
+/** Department letter + two-letter item type, e.g. ('Women','Dress') -> 'WDR'. Unknown labels become 'X'. */
 export function skuPrefix(department: Department | string, itemType: string, codes: SkuCode[]): string {
   const dept = codes.find((c) => c.kind === 'department' && c.label === department)?.code ?? 'X';
   const type = codes.find((c) => c.kind === 'item_type' && c.label === itemType)?.code ?? 'X';

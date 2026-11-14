@@ -65,7 +65,7 @@ export function ItemsList() {
       <SearchField
         value={q}
         onChangeText={setQ}
-        placeholder="Search: skirt, Gorman, WD-012, size 10…"
+        placeholder="Search: skirt, Gorman, WDR-012, size 10…"
         accessibilityLabel="Search items"
         autoCapitalize="none"
       />

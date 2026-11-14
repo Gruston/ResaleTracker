@@ -26,7 +26,7 @@ On sign-in the app loads the whole business (`BusinessData` in `src/domain/types
 `sku.ts`
 - `skuPrefix(department, itemType, codes: SkuCode[])` → 'WD'
 - `storageFor(sku, storage: StorageLocation[])` → full prefix match, else department letter, else 'Not set'
-- `parseSku('WD-014')` → `{ prefix: 'WD', number: 14 }`
+- `parseSku('WDR-014')` → `{ prefix: 'WD', number: 14 }`
 
 `lines.ts`
 - `splitLine(line)` → `qty` lines of qty 1 at even price (cents remainder on the first), descriptions "X 1", "X 2"…

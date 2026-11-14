@@ -31,7 +31,7 @@ export default function SkuCodesScreen() {
     <Screen title="SKU codes" back backLabel="More" bottomInset>
       <Callout>
         <Text style={{ fontSize: 14, lineHeight: 20, color: colors.ink }}>
-          A SKU is <Text style={{ fontWeight: '700' }}>department + item type + number</Text>. <Text style={{ fontWeight: '700' }}>WD-014</Text> is the 14th women's dress. The prefix tells you which shelf or box to go to.
+          A SKU is <Text style={{ fontWeight: '700' }}>department + item type + number</Text>. <Text style={{ fontWeight: '700' }}>WDR-014</Text> is the 14th women's dress. Item types use their first two letters (DR = dress, SK = skirt). The prefix tells you which shelf or box to go to.
         </Text>
       </Callout>
 
@@ -153,7 +153,7 @@ function CodeSheet({ edit, codes, onClose }: { edit: CodeEdit; codes: SkuCode[];
         <Field label="Item type" value={label} onChangeText={(t) => { setLabel(t); setError(null); }} placeholder="e.g. Swimwear" autoCapitalize="words" />
       ) : null}
       <Field
-        label={editing ? 'Code' : 'Code (1 or 2 letters)'}
+        label={editing ? 'Code' : 'Code (2 letters)'}
         value={code}
         onChangeText={(t) => {
           setCode(cleanCode(t).slice(0, max));
