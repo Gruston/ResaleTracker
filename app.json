@@ -1,13 +1,14 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Resale Tracker",
+    "slug": "resale-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gruston.resaletracker"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,6 +21,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "scheme": "resaletracker",
+    "plugins": [
+      "expo-router",
+      "expo-sharing",
+      "expo-image"
+    ]
   }
 }
