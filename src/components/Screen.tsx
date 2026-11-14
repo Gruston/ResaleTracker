@@ -7,6 +7,7 @@ import { isDemoMode } from '@/lib/demo';
 import { colors } from '@/theme';
 import { DemoBanner } from './DemoBanner';
 import { Icon } from './Icon';
+import { OfflineBanner } from './OfflineBanner';
 
 export interface ScreenProps {
   /** Large left-aligned title (tab roots) or, with `back`, a centred small title. */
@@ -82,6 +83,7 @@ export function Screen({
     <View style={styles.root}>
       <DemoBanner topInset={insets.top} />
       {header}
+      <OfflineBanner />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView

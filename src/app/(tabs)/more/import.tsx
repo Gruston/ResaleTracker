@@ -4,13 +4,8 @@ import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Button, Callout, Card, KV, Progress, Screen, Select } from '@/components';
-import {
-  useBusinessData,
-  useCreateItem,
-  useMarkPosted,
-  useRecordSale,
-  useUpsertShop,
-} from '@/data';
+import { useBusinessData } from '@/data';
+import { useImportSales } from '@/data/mutations/import';
 import { formatDate, formatMoney, today } from '@/domain';
 import { parseCsvTable, toCsv } from '@/features/more/csv';
 import {
@@ -25,7 +20,6 @@ import {
   type ColumnMapping,
   type ImportContext,
   type ImportField,
-  type ImportPlan,
 } from '@/features/more/importMap';
 import { readTextFile, shareCsv } from '@/features/more/share';
 import { CardTitle, ErrorText, Note } from '@/features/more/ui';
@@ -50,10 +44,7 @@ const CSV_TYPES = ['text/csv', 'text/comma-separated-values', 'application/csv',
 
 export default function ImportScreen() {
   const { data } = useBusinessData();
-  const createItem = useCreateItem();
-  const recordSale = useRecordSale();
-  const markPosted = useMarkPosted();
-  const upsertShop = useUpsertShop();
+  const importSales = useImportSales();
 
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -123,51 +114,15 @@ export default function ImportScreen() {
     setBusy(true);
     setError(null);
     stopRef.current = false;
-    const skipped = [...plan.skipped];
-    let imported = 0;
-    let estimated = 0;
-    let failuresInARow = 0;
-    let stopped = false;
-    const total = plan.plans.length;
-    setProgress({ done: 0, total });
+    setProgress({ done: 0, total: plan.plans.length });
     try {
-      // 1. Shops named in the file that do not exist yet.
-      const shopIds = new Map<string, string>();
-      const wanted = [...new Set(plan.plans.map((p) => p.plan.newShopName).filter((n): n is string => !!n).map((n) => n))];
-      const seenLower = new Set<string>();
-      for (const name of wanted) {
-        if (seenLower.has(name.toLowerCase())) continue;
-        seenLower.add(name.toLowerCase());
-        const shop = await upsertShop.mutateAsync({ name, kind: 'shop' });
-        shopIds.set(name.toLowerCase(), shop.id);
-      }
-
-      // 2. One item and one sale per row.
-      for (let i = 0; i < plan.plans.length; i++) {
-        if (stopRef.current) {
-          stopped = true;
-          for (const rest of plan.plans.slice(i)) skipped.push({ rowNumber: rest.rowNumber, reason: 'Stopped before this row' });
-          break;
-        }
-        const { rowNumber, plan: p } = plan.plans[i];
-        try {
-          await importOne(p, p.newShopName ? (shopIds.get(p.newShopName.toLowerCase()) ?? null) : p.item.shopId);
-          imported += 1;
-          if (p.notes.some((n) => n.includes('estimated'))) estimated += 1;
-          failuresInARow = 0;
-        } catch (e) {
-          failuresInARow += 1;
-          skipped.push({ rowNumber, reason: `Could not save: ${e instanceof Error ? e.message : 'unknown error'}` });
-          if (failuresInARow >= 3) {
-            stopped = true;
-            for (const rest of plan.plans.slice(i + 1)) skipped.push({ rowNumber: rest.rowNumber, reason: 'Stopped after repeated errors' });
-            break;
-          }
-        }
-        setProgress({ done: i + 1, total });
-      }
-      skipped.sort((a, b) => a.rowNumber - b.rowNumber);
-      setOutcome({ imported, skipped, estimated, newShops: shopIds.size, stopped });
+      const res = await importSales.mutateAsync({
+        plans: plan.plans,
+        onProgress: setProgress,
+        shouldStop: () => stopRef.current,
+      });
+      const skipped = [...plan.skipped, ...res.failed].sort((a, b) => a.rowNumber - b.rowNumber);
+      setOutcome({ imported: res.imported, skipped, estimated: res.estimated, newShops: res.newShops, stopped: res.stopped });
       setLoaded(null);
     } catch (e) {
       setError(`Import stopped. ${e instanceof Error ? e.message : ''}`.trim());
@@ -175,41 +130,6 @@ export default function ImportScreen() {
       setBusy(false);
       setProgress(null);
     }
-  };
-
-  const importOne = async (p: ImportPlan, shopId: string | null) => {
-    const it = p.item;
-    const item = await createItem.mutateAsync({
-      item: {
-        title: it.title,
-        brand: it.brand,
-        department: it.department,
-        itemType: it.itemType,
-        size: it.size,
-        description: '',
-        shopId,
-        tripId: null,
-        tripLineId: null,
-        purchaseDate: null,
-        cost: it.cost,
-        status: 'posted',
-        listedDate: it.listedDate,
-        firstListPrice: it.firstListPrice,
-        adRate: it.adRate,
-        channel: 'ebay',
-      },
-    });
-    const order = await recordSale.mutateAsync({
-      orderNo: p.sale.orderNo,
-      soldDate: p.sale.soldDate,
-      orderTotal: p.sale.orderTotal,
-      buyerProtection: p.sale.buyerProtection,
-      postage: p.sale.postage,
-      items: [{ itemId: item.id, salePrice: p.sale.salePrice }],
-      channel: 'ebay',
-    });
-    // History is already posted: mark it so it does not appear under "To post".
-    await markPosted.mutateAsync({ orderId: order.id, postedDate: p.sale.soldDate });
   };
 
   // ------------------------------------------------------------------ views
@@ -223,9 +143,9 @@ export default function ImportScreen() {
             {progress.done} of {progress.total}
           </Text>
           <Progress done={progress.done} total={progress.total} />
-          <Note>Keep the app open until this finishes. Each sale is saved as it goes, so nothing is lost if you stop.</Note>
+          <Note>Keep the app open until this finishes. Sales are saved 50 at a time, so nothing is lost if you stop.</Note>
         </Card>
-        <Button label="Stop after this one" variant="secondary" onPress={() => (stopRef.current = true)} />
+        <Button label="Stop after this batch" variant="secondary" onPress={() => (stopRef.current = true)} />
       </Screen>
     );
   }

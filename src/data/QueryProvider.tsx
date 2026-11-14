@@ -4,8 +4,13 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import type { ReactNode } from 'react';
 
+import './mutations'; // registers every write so queued changes can resume after a restart
+import { installOfflineSupport, onCacheRestored } from './offline';
+
 export const SEVEN_DAYS = 1000 * 60 * 60 * 24 * 7;
-export const PERSIST_KEY = 'resaletracker-query-cache';
+import { PERSIST_KEY } from './persistKey';
+
+export { PERSIST_KEY };
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,6 +21,8 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+installOfflineSupport(queryClient);
 
 const persister = createAsyncStoragePersister({
   storage: AsyncStorage,
@@ -38,9 +45,12 @@ export function QueryProvider({ children }: { children: ReactNode }) {
         maxAge: SEVEN_DAYS,
         buster: 'v1',
         dehydrateOptions: {
+          // Changes still waiting to be sent (paused mutations) are saved so they survive a restart.
+          shouldDehydrateMutation: (m) => m.state.isPaused,
           shouldDehydrateQuery: (q) => q.state.status === 'success' && shouldPersist(q.queryKey),
         },
       }}
+      onSuccess={() => onCacheRestored(queryClient)}
     >
       {children}
     </PersistQueryClientProvider>

@@ -39,7 +39,8 @@ The sandbox blocks api.expo.dev, so:
 EXPO_OFFLINE=1 npx expo install <pkg>   # only if truly needed; prefer what's installed
 npm run typecheck                        # tsc --noEmit
 npm test                                 # jest
+npm run check:cycles                     # no circular imports (they crash at load time in the bundle)
 EXPO_OFFLINE=1 npx expo export --platform ios --output-dir /tmp/rt-export   # bundle check
 ```
 
-Before you finish a task: typecheck and tests must pass, and the iOS bundle must build. Do not edit files owned by another task (see BUILD_PLAN.md) unless the plan says so; if you need a change there, note it in your final report.
+Before you finish a task: typecheck, tests and check:cycles must pass, and the iOS bundle must build. Do not edit files owned by another task (see BUILD_PLAN.md) unless the plan says so; if you need a change there, note it in your final report.

@@ -11,6 +11,9 @@ import { DraftLinesEditor, newDraftLine } from './DraftLinesEditor';
 import { ErrorText, errorMessage } from './ErrorText';
 import { isValidDate, parseMoney, readDraftLines, type DraftLine } from './helpers';
 import { ReceiptPicker } from './ReceiptPicker';
+import { ReceiptReader } from './ReceiptReader';
+import { mergeDraftLines } from './receipt';
+import { uuid } from '@/lib/uuid';
 import { ShopSelect } from './ShopSelect';
 
 export interface TripFormProps {
@@ -33,6 +36,8 @@ export function TripForm({ trip, autoCamera }: TripFormProps) {
   const [total, setTotal] = useState(trip ? String(trip.total) : '');
   const [photo, setPhoto] = useState<string | null>(null);
   const [removedSaved, setRemovedSaved] = useState(false);
+  // Receipt already uploaded for AI reading; reused on save so it is not uploaded twice.
+  const [uploaded, setUploaded] = useState<{ uri: string; path: string } | null>(null);
   const [lines, setLines] = useState<DraftLine[]>([newDraftLine()]);
   const [invalid, setInvalid] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ shop?: string; date?: string; total?: string }>({});
@@ -59,7 +64,7 @@ export function TripForm({ trip, autoCamera }: TripFormProps) {
       let receiptPath: string | null | undefined;
       if (photo) {
         if (!businessId) throw new Error('No business yet');
-        receiptPath = await uploadImage(photo, businessId, 'receipts');
+        receiptPath = uploaded && uploaded.uri === photo ? uploaded.path : await uploadImage(photo, businessId, 'receipts');
       } else if (removedSaved) {
         receiptPath = null;
       }
@@ -119,6 +124,26 @@ export function TripForm({ trip, autoCamera }: TripFormProps) {
           }}
         />
       </Card>
+
+      {!editing && photo ? (
+        <ReceiptReader
+          key={photo}
+          businessId={businessId}
+          photoUri={photo}
+          uploadedPath={uploaded && uploaded.uri === photo ? uploaded.path : null}
+          onUploaded={(path) => setUploaded({ uri: photo, path })}
+          shops={data.shops}
+          onShopAdded={setShopId}
+          onFill={({ shopId: sid, date: d, total: t, result }) => {
+            if (sid) setShopId(sid);
+            if (d) setDate(d);
+            if (t) setTotal(t);
+            if (result.lines.length) setLines((cur) => mergeDraftLines(cur, result.lines, uuid));
+            setErrors({});
+            setInvalid([]);
+          }}
+        />
+      ) : null}
 
       {!editing ? (
         <>

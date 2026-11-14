@@ -4,7 +4,7 @@ import { todayISO } from '@/lib/today';
 import { uuid } from '@/lib/uuid';
 import { allocateOrder } from '../domain';
 import { orderItemToRow, orderPatchToRow, orderToRow, returnToRow } from '../mappers';
-import { check, useBizMutation } from './helpers';
+import { check, defineBizMutation } from './helpers';
 
 export interface RecordSaleInput {
   orderNo?: string | null;
@@ -54,32 +54,34 @@ function buildOrder(
  * Records a sale of one or more items as one (combined) order. Allocations (postage, protection, ad fee per item)
  * come from allocateOrder(); the items become 'sold'. Resolves with the new order.
  */
-export function useRecordSale() {
-  return useBizMutation<RecordSaleInput, Order>(
-    async ({ businessId, data }, input) => {
-      const order = buildOrder(input, data);
-      const { items, ...row } = order;
-      check(await supabase.from('orders').insert(orderToRow(businessId, row)));
-      check(await supabase.from('order_items').insert(items.map((oi) => orderItemToRow(businessId, order.id, oi))));
-      check(
-        await supabase
-          .from('items')
-          .update({ status: 'sold' })
-          .in('id', items.map((i) => i.itemId)),
-      );
-      return order;
-    },
-    (draft, input) => {
-      const order = buildOrder(input, draft);
-      draft.orders.unshift(order);
-      for (const oi of order.items) {
-        const it = draft.items.find((i) => i.id === oi.itemId);
-        if (it) it.status = 'sold';
-      }
-      return order;
-    },
-  );
-}
+export const useRecordSale = defineBizMutation<RecordSaleInput, Order, Order>({
+  key: 'recordSale',
+  prepare: (data, input) => buildOrder(input, data),
+  remote: async ({ businessId }, _input, order) => {
+    const { items, ...row } = order;
+    check(await supabase.from('orders').upsert(orderToRow(businessId, row)));
+    check(
+      await supabase
+        .from('order_items')
+        .upsert(items.map((oi) => orderItemToRow(businessId, order.id, oi)), { onConflict: 'order_id,item_id' }),
+    );
+    check(
+      await supabase
+        .from('items')
+        .update({ status: 'sold' })
+        .in('id', items.map((i) => i.itemId)),
+    );
+    return order;
+  },
+  apply: (draft, _input, order) => {
+    draft.orders.unshift(order);
+    for (const oi of order.items) {
+      const it = draft.items.find((i) => i.id === oi.itemId);
+      if (it) it.status = 'sold';
+    }
+    return order;
+  },
+});
 
 export interface MarkPostedInput {
   orderId: string;
@@ -89,49 +91,57 @@ export interface MarkPostedInput {
   postageReceiptPath?: string | null;
 }
 
-/** Marks an order as posted (items that are 'sold' become 'posted'); optionally saves tracking and the label receipt. */
-export function useMarkPosted() {
-  return useBizMutation<MarkPostedInput, void>(
-    async ({ data }, input) => {
-      const patch: Partial<Order> = { postedDate: input.postedDate ?? todayISO() };
-      if (input.trackingNo !== undefined) patch.trackingNo = input.trackingNo;
-      if (input.postageReceiptPath !== undefined) patch.postageReceiptPath = input.postageReceiptPath;
-      check(await supabase.from('orders').update(orderPatchToRow(patch)).eq('id', input.orderId));
-      const order = data.orders.find((o) => o.id === input.orderId);
-      const ids = (order?.items ?? [])
-        .map((oi) => oi.itemId)
-        .filter((id) => data.items.find((i) => i.id === id)?.status === 'sold');
-      if (ids.length) check(await supabase.from('items').update({ status: 'posted' }).in('id', ids));
-    },
-    (draft, input) => {
-      const order = draft.orders.find((o) => o.id === input.orderId);
-      if (!order) throw new Error('Order not found');
-      order.postedDate = input.postedDate ?? todayISO();
-      if (input.trackingNo !== undefined) order.trackingNo = input.trackingNo;
-      if (input.postageReceiptPath !== undefined) order.postageReceiptPath = input.postageReceiptPath;
-      for (const oi of order.items) {
-        const it = draft.items.find((i) => i.id === oi.itemId);
-        if (it && it.status === 'sold') it.status = 'posted';
-      }
-    },
-  );
+interface MarkPostedPrep {
+  postedDate: string;
+  /** items on the order that are 'sold' now and become 'posted' */
+  soldItemIds: string[];
 }
 
+/** Marks an order as posted (items that are 'sold' become 'posted'); optionally saves tracking and the label receipt. */
+export const useMarkPosted = defineBizMutation<MarkPostedInput, void, MarkPostedPrep>({
+  key: 'markPosted',
+  prepare: (data, input) => {
+    const order = data.orders.find((o) => o.id === input.orderId);
+    if (!order) throw new Error('Order not found');
+    return {
+      postedDate: input.postedDate ?? todayISO(),
+      soldItemIds: order.items.map((oi) => oi.itemId).filter((id) => data.items.find((i) => i.id === id)?.status === 'sold'),
+    };
+  },
+  remote: async (_ctx, input, prep) => {
+    const patch: Partial<Order> = { postedDate: prep.postedDate };
+    if (input.trackingNo !== undefined) patch.trackingNo = input.trackingNo;
+    if (input.postageReceiptPath !== undefined) patch.postageReceiptPath = input.postageReceiptPath;
+    check(await supabase.from('orders').update(orderPatchToRow(patch)).eq('id', input.orderId));
+    if (prep.soldItemIds.length) check(await supabase.from('items').update({ status: 'posted' }).in('id', prep.soldItemIds));
+  },
+  apply: (draft, input, prep) => {
+    const order = draft.orders.find((o) => o.id === input.orderId);
+    if (!order) throw new Error('Order not found');
+    order.postedDate = prep.postedDate;
+    if (input.trackingNo !== undefined) order.trackingNo = input.trackingNo;
+    if (input.postageReceiptPath !== undefined) order.postageReceiptPath = input.postageReceiptPath;
+    for (const oi of order.items) {
+      const it = draft.items.find((i) => i.id === oi.itemId);
+      if (it && it.status === 'sold') it.status = 'posted';
+    }
+  },
+});
+
 /** Edit order details (order number, tracking number, postage receipt photo, dates) without changing item status. */
-export function useUpdateOrder() {
-  return useBizMutation<
-    { orderId: string; patch: Partial<Pick<Order, 'orderNo' | 'trackingNo' | 'postedDate' | 'postageReceiptPath' | 'soldDate'>> },
-    void
-  >(
-    async (_ctx, { orderId, patch }) => {
-      check(await supabase.from('orders').update(orderPatchToRow(patch)).eq('id', orderId));
-    },
-    (draft, { orderId, patch }) => {
-      const o = draft.orders.find((x) => x.id === orderId);
-      if (o) Object.assign(o, patch);
-    },
-  );
-}
+export const useUpdateOrder = defineBizMutation<
+  { orderId: string; patch: Partial<Pick<Order, 'orderNo' | 'trackingNo' | 'postedDate' | 'postageReceiptPath' | 'soldDate'>> },
+  void
+>({
+  key: 'updateOrder',
+  remote: async (_ctx, { orderId, patch }) => {
+    check(await supabase.from('orders').update(orderPatchToRow(patch)).eq('id', orderId));
+  },
+  apply: (draft, { orderId, patch }) => {
+    const o = draft.orders.find((x) => x.id === orderId);
+    if (o) Object.assign(o, patch);
+  },
+});
 
 export interface RecordReturnInput {
   itemId: string;
@@ -154,23 +164,21 @@ function buildReturn(input: RecordReturnInput): Return {
 }
 
 /** Records a return (outcome 'pending') and sets the item to 'returned'. Resolves with the return. */
-export function useRecordReturn() {
-  return useBizMutation<RecordReturnInput, Return>(
-    async ({ businessId }, input) => {
-      const ret = buildReturn(input);
-      check(await supabase.from('returns').insert(returnToRow(businessId, ret)));
-      check(await supabase.from('items').update({ status: 'returned' }).eq('id', input.itemId));
-      return ret;
-    },
-    (draft, input) => {
-      const ret = buildReturn(input);
-      draft.returns.push(ret);
-      const it = draft.items.find((i) => i.id === input.itemId);
-      if (it) it.status = 'returned';
-      return ret;
-    },
-  );
-}
+export const useRecordReturn = defineBizMutation<RecordReturnInput, Return, Return>({
+  key: 'recordReturn',
+  prepare: (_data, input) => buildReturn(input),
+  remote: async ({ businessId }, input, ret) => {
+    check(await supabase.from('returns').upsert(returnToRow(businessId, ret)));
+    check(await supabase.from('items').update({ status: 'returned' }).eq('id', input.itemId));
+    return ret;
+  },
+  apply: (draft, input, ret) => {
+    draft.returns.push(ret);
+    const it = draft.items.find((i) => i.id === input.itemId);
+    if (it) it.status = 'returned';
+    return ret;
+  },
+});
 
 export interface ResolveReturnInput {
   returnId: string;
@@ -181,29 +189,31 @@ export interface ResolveReturnInput {
 }
 
 /** Resolves a pending return. */
-export function useResolveReturn() {
-  return useBizMutation<ResolveReturnInput, void>(
-    async ({ data }, { returnId, outcome, listedDate }) => {
-      const ret = data.returns.find((r) => r.id === returnId);
-      if (!ret) throw new Error('Return not found');
-      check(await supabase.from('returns').update({ outcome }).eq('id', returnId));
-      const itemPatch: { status: ItemStatus; listed_date?: string } =
-        outcome === 'relisted' ? { status: 'listed', listed_date: listedDate ?? todayISO() } : { status: 'faulty' };
-      check(await supabase.from('items').update(itemPatch).eq('id', ret.itemId));
-    },
-    (draft, { returnId, outcome, listedDate }) => {
-      const ret = draft.returns.find((r) => r.id === returnId);
-      if (!ret) throw new Error('Return not found');
-      ret.outcome = outcome;
-      const it = draft.items.find((i) => i.id === ret.itemId);
-      if (it) {
-        if (outcome === 'relisted') {
-          it.status = 'listed';
-          it.listedDate = listedDate ?? todayISO();
-        } else {
-          it.status = 'faulty';
-        }
+export const useResolveReturn = defineBizMutation<ResolveReturnInput, void, { itemId: string; listedDate: string }>({
+  key: 'resolveReturn',
+  prepare: (data, { returnId, listedDate }) => {
+    const ret = data.returns.find((r) => r.id === returnId);
+    if (!ret) throw new Error('Return not found');
+    return { itemId: ret.itemId, listedDate: listedDate ?? todayISO() };
+  },
+  remote: async (_ctx, { returnId, outcome }, prep) => {
+    check(await supabase.from('returns').update({ outcome }).eq('id', returnId));
+    const itemPatch: { status: ItemStatus; listed_date?: string } =
+      outcome === 'relisted' ? { status: 'listed', listed_date: prep.listedDate } : { status: 'faulty' };
+    check(await supabase.from('items').update(itemPatch).eq('id', prep.itemId));
+  },
+  apply: (draft, { returnId, outcome }, prep) => {
+    const ret = draft.returns.find((r) => r.id === returnId);
+    if (!ret) throw new Error('Return not found');
+    ret.outcome = outcome;
+    const it = draft.items.find((i) => i.id === prep.itemId);
+    if (it) {
+      if (outcome === 'relisted') {
+        it.status = 'listed';
+        it.listedDate = prep.listedDate;
+      } else {
+        it.status = 'faulty';
       }
-    },
-  );
-}
+    }
+  },
+});

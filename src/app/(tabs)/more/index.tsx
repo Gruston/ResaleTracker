@@ -1,11 +1,14 @@
 import { router } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Text } from 'react-native';
 
 import { Button, Field, ListGroup, Row, Screen, SectionTitle, Sheet } from '@/components';
 import { useAddMember, useBusinessData, useSession } from '@/data';
+import { useAiUsageToday } from '@/data/ai';
 import { formatMoney, sumMoney } from '@/domain';
 import { addMemberErrorText, isLikelyEmail } from '@/features/more/forms';
+import { SharedWithSection } from '@/features/more/members';
 import { ConfirmSheet, ErrorText, Note } from '@/features/more/ui';
 import { colors } from '@/theme';
 import { versionText } from '@/lib/version';
@@ -13,6 +16,7 @@ import { versionText } from '@/lib/version';
 export default function MoreScreen() {
   const { data } = useBusinessData();
   const { email, demo, signOut } = useSession();
+  const aiUsage = useAiUsageToday();
   const [shareOpen, setShareOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -45,6 +49,14 @@ export default function MoreScreen() {
           subtitle={`Satchels, tissue paper, tape, pens… · ${formatMoney(spent)} so far`}
           onPress={() => router.push('/more/expenses')}
         />
+        <Row
+          title="AI helpers"
+          subtitle={
+            aiUsage.isError
+              ? 'Could not check'
+              : `${aiUsage.used} used today of ${aiUsage.cap}${aiUsage.used >= aiUsage.cap ? '. All used, they reset tomorrow' : ''}${demo ? ' (demo)' : ''}`
+          }
+        />
         <Row title="Fee settings" subtitle="Buyer protection, ad rate, postage label" onPress={() => router.push('/more/fees')} />
       </ListGroup>
 
@@ -62,14 +74,7 @@ export default function MoreScreen() {
         <Row title="Sync and backup" subtitle={demo ? 'Demo data stays on this device' : 'iPhone and iPad stay in sync automatically'} />
       </ListGroup>
 
-      <SectionTitle>People</SectionTitle>
-      <ListGroup>
-        <Row
-          title="Add Damon"
-          subtitle={demo ? 'Not available in demo mode' : 'Optional: share this business with Damon'}
-          onPress={demo ? undefined : () => setShareOpen(true)}
-        />
-      </ListGroup>
+      <SharedWithSection demo={demo} onAdd={() => setShareOpen(true)} />
 
       <SectionTitle>Account</SectionTitle>
       <ListGroup>
@@ -98,6 +103,7 @@ export default function MoreScreen() {
 
 function AddMemberSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const add = useAddMember();
+  const qc = useQueryClient();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -118,6 +124,7 @@ function AddMemberSheet({ visible, onClose }: { visible: boolean; onClose: () =>
     }
     try {
       await add.mutateAsync({ email });
+      void qc.invalidateQueries({ queryKey: ['members'] });
       setDone(`Added. ${email.trim()} can now see and edit this business.`);
       setEmail('');
     } catch (e) {

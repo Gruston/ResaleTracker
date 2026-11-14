@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { isDemoMode } from '@/lib/demo';
 import { supabase } from '@/lib/supabase';
-import { PERSIST_KEY } from './QueryProvider';
+import { PERSIST_KEY } from './persistKey';
 
 export interface SessionState {
   session: Session | null;

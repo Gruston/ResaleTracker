@@ -1,7 +1,10 @@
 // Pure helpers for "Load your sales history": guess which CSV column is which, read money and dates the way
 // eBay Seller Hub and spreadsheets write them, and turn one CSV row into an item plus a sale.
 import { itemPriceFromPriceWithProtection, protectionFor, round2 } from '@/domain/money';
-import type { Department, Settings, Shop, SkuCode } from '@/domain/types';
+import { allocateOrder } from '@/domain/orders';
+import { skuPrefix } from '@/domain/sku';
+import type { Department, Item, Order, Settings, Shop, SkuCode } from '@/domain/types';
+import { uuid } from '@/lib/uuid';
 
 export type ImportField =
   | 'soldDate'
@@ -503,3 +506,227 @@ export const TEMPLATE_ROWS: readonly (readonly string[])[] = [
   ['14/03/2026', 'Zimmermann silk wrap dress', 'Zimmermann', 'Women', 'Dress', '10', '22.00', '95.00', '82.00', '100.60', '6.10', '12.50', '3.40', '12-34567-89012', 'Vinnies Newtown'],
   ['02/04/2026', 'Country Road linen shirt', 'Country Road', 'Men', 'Shirt', 'M', '0', '45.00', '38.00', '49.90', '3.40', '9.50', '', '', 'My wardrobe'],
 ];
+
+// ---------------------------------------------------------------------------
+// Batching: planned rows -> items, orders and order lines (no I/O)
+// ---------------------------------------------------------------------------
+
+/** Rows written per round of database calls. */
+export const IMPORT_BATCH_SIZE = 50;
+
+export interface PlannedRow {
+  rowNumber: number;
+  plan: ImportPlan;
+}
+
+/** Split a list into slices of at most `size` (size below 1 is treated as 1). */
+export function chunk<T>(list: readonly T[], size: number = IMPORT_BATCH_SIZE): T[][] {
+  const n = Math.max(1, Math.floor(size));
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += n) out.push(list.slice(i, i + n));
+  return out;
+}
+
+/** Shop names in the plans that need creating: each once, first spelling wins, matched ignoring case. */
+export function newShopNames(plans: readonly PlannedRow[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const { plan } of plans) {
+    const name = plan.newShopName?.trim();
+    if (!name || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    out.push(name);
+  }
+  return out;
+}
+
+/** How many SKUs each prefix needs for these rows (e.g. WD -> 12, WT -> 3), in first-seen order. */
+export function skuNeeds(plans: readonly PlannedRow[], codes: readonly SkuCode[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const { plan } of plans) {
+    const prefix = skuPrefix(plan.item.department, plan.item.itemType, [...codes]);
+    out.set(prefix, (out.get(prefix) ?? 0) + 1);
+  }
+  return out;
+}
+
+export interface SkuReservation {
+  sku: string;
+  sku_number: number;
+}
+
+export interface BuiltRow {
+  rowNumber: number;
+  item: Item;
+  order: Order;
+}
+
+/**
+ * Build the item and order for each planned row. `reserved` holds the SKUs reserved per prefix (see skuNeeds);
+ * they are handed out in row order. Items are already 'posted' and orders carry posted date = sold date, because
+ * this is history. Allocations come from allocateOrder, the same as a sale recorded in the app.
+ * `shopIds` maps a lower-case new shop name to its id.
+ */
+export function buildBatch(
+  plans: readonly PlannedRow[],
+  reserved: ReadonlyMap<string, readonly SkuReservation[]>,
+  shopIds: ReadonlyMap<string, string>,
+  settings: Settings,
+  codes: readonly SkuCode[],
+): BuiltRow[] {
+  const used = new Map<string, number>();
+  return plans.map(({ rowNumber, plan }) => {
+    const { item: it, sale } = plan;
+    const prefix = skuPrefix(it.department, it.itemType, [...codes]);
+    const k = used.get(prefix) ?? 0;
+    const res = reserved.get(prefix)?.[k];
+    if (!res) throw new Error(`No SKU reserved for ${prefix}`);
+    used.set(prefix, k + 1);
+
+    const shopId = it.shopId ?? (plan.newShopName ? (shopIds.get(plan.newShopName.trim().toLowerCase()) ?? null) : null);
+    const item: Item = {
+      id: uuid(),
+      sku: res.sku,
+      skuPrefix: prefix,
+      skuNumber: res.sku_number,
+      title: it.title,
+      brand: it.brand,
+      department: it.department,
+      itemType: it.itemType,
+      size: it.size,
+      description: '',
+      shopId,
+      tripId: null,
+      tripLineId: null,
+      purchaseDate: null,
+      cost: it.cost,
+      onlineOrderNo: null,
+      status: 'posted',
+      listedDate: it.listedDate,
+      firstListPrice: it.firstListPrice,
+      adRate: it.adRate,
+      channel: 'ebay',
+      ebayListingId: null,
+      photos: [],
+    };
+    const items = allocateOrder(
+      {
+        orderTotal: sale.orderTotal,
+        buyerProtection: sale.buyerProtection,
+        postage: sale.postage,
+        items: [{ itemId: item.id, salePrice: sale.salePrice, adRate: item.adRate ?? settings.defaultAdRate }],
+      },
+      settings,
+    );
+    const order: Order = {
+      id: uuid(),
+      channel: 'ebay',
+      orderNo: sale.orderNo?.trim() ? sale.orderNo.trim() : null,
+      soldDate: sale.soldDate,
+      orderTotal: sale.orderTotal,
+      buyerProtection: sale.buyerProtection,
+      postage: sale.postage,
+      trackingNo: null,
+      postedDate: sale.soldDate,
+      postageReceiptPath: null,
+      items,
+    };
+    return { rowNumber, item, order };
+  });
+}
+
+/** True when a plan carries an estimate note (used for the "estimated from Fee settings" summary). */
+export function isEstimated(plan: ImportPlan): boolean {
+  return plan.notes.some((n) => n.includes('estimated'));
+}
+
+export interface ImportResult {
+  imported: number;
+  /** Rows that were planned but not saved, with the reason. */
+  failed: { rowNumber: number; reason: string }[];
+  estimated: number;
+  newShops: number;
+  stopped: boolean;
+}
+
+export interface ImportProgress {
+  done: number;
+  total: number;
+}
+
+export interface ImportDeps {
+  /** Create the shops that do not exist yet. Resolves with lower-case name -> id. Throwing aborts the import. */
+  createShops: (names: string[]) => Promise<Map<string, string>>;
+  /** Save these rows (all or nothing). Throws if anything fails. */
+  saveBatch: (rows: PlannedRow[], shopIds: ReadonlyMap<string, string>) => Promise<void>;
+  /** Checked before each batch. */
+  shouldStop?: () => boolean;
+  onProgress?: (p: ImportProgress) => void;
+  batchSize?: number;
+  /** Stop after this many rows fail one after another. */
+  maxFailuresInARow?: number;
+}
+
+/**
+ * Save planned rows in batches. A failed batch is retried one row at a time so one bad row does not lose the other
+ * 49. Stops between batches when asked, and after a run of failures. Never throws for row errors.
+ */
+export async function runImport(plans: readonly PlannedRow[], deps: ImportDeps): Promise<ImportResult> {
+  const total = plans.length;
+  const maxFail = deps.maxFailuresInARow ?? 3;
+  const failed: ImportResult['failed'] = [];
+  let imported = 0;
+  let estimated = 0;
+  let stopped = false;
+  let failuresInARow = 0;
+  const report = () => deps.onProgress?.({ done: imported + failed.length, total });
+
+  report();
+  const shopIds = plans.length ? await deps.createShops(newShopNames(plans)) : new Map<string, string>();
+  const skipRest = (rest: readonly PlannedRow[], reason: string) => {
+    for (const r of rest) failed.push({ rowNumber: r.rowNumber, reason });
+  };
+  const message = (e: unknown) => `Could not save: ${e instanceof Error ? e.message : 'unknown error'}`;
+
+  const batches = chunk(plans, deps.batchSize ?? IMPORT_BATCH_SIZE);
+  for (let b = 0; b < batches.length && !stopped; b++) {
+    const batch = batches[b];
+    const after = batches.slice(b + 1).flat();
+    if (deps.shouldStop?.()) {
+      stopped = true;
+      skipRest([...batch, ...after], 'Stopped before this row');
+      break;
+    }
+    try {
+      await deps.saveBatch(batch, shopIds);
+      imported += batch.length;
+      estimated += batch.filter((r) => isEstimated(r.plan)).length;
+      failuresInARow = 0;
+      report();
+      continue;
+    } catch {
+      // fall through: find the bad row(s) by saving one at a time
+    }
+    for (let i = 0; i < batch.length; i++) {
+      const row = batch[i];
+      try {
+        await deps.saveBatch([row], shopIds);
+        imported += 1;
+        if (isEstimated(row.plan)) estimated += 1;
+        failuresInARow = 0;
+      } catch (e) {
+        failed.push({ rowNumber: row.rowNumber, reason: message(e) });
+        failuresInARow += 1;
+        if (failuresInARow >= maxFail) {
+          stopped = true;
+          skipRest([...batch.slice(i + 1), ...after], 'Stopped after repeated errors');
+          report();
+          break;
+        }
+      }
+      report();
+    }
+  }
+  failed.sort((a, b) => a.rowNumber - b.rowNumber);
+  return { imported, failed, estimated, newShops: shopIds.size, stopped };
+}

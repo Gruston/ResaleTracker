@@ -1,7 +1,7 @@
 import * as Updates from 'expo-updates';
 
 /** Bump with each published change so we can tell which version a phone is running. */
-export const APP_VERSION_LABEL = '14 Nov 2026 · calendar dates';
+export const APP_VERSION_LABEL = '15 Nov 2026 · AI helpers, offline, fast import';
 
 /** e.g. "14 Nov 2026 · calendar dates (update 1a2b3c4d, published 14/11/2026 6:30 pm)" */
 export function versionText(): string {

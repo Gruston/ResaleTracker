@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -49,6 +49,8 @@ import {
   type ItemFormState,
   type PhotoDraft,
 } from './form';
+import { AiListingButton } from './AiListingButton';
+import { applySuggestion } from './ai';
 import { pageStyle } from './layout';
 
 export interface ItemFormParams {
@@ -94,6 +96,7 @@ function FormBody({ existing, params }: { existing?: NonNullable<ReturnType<type
   );
   const [shake, setShake] = useState(false); // show errors after first failed save
   const [saving, setSaving] = useState(false);
+  const uploadedByKey = useRef<Record<string, string>>({}); // photos already uploaded for the AI, so save does not repeat them
   const [photoSheet, setPhotoSheet] = useState(false);
   const [shopSheet, setShopSheet] = useState(false);
   const [newShop, setNewShop] = useState('');
@@ -161,7 +164,7 @@ function FormBody({ existing, params }: { existing?: NonNullable<ReturnType<type
     try {
       const newOnes = f.photos.filter((x) => !x.existing);
       const uploaded: string[] = [];
-      for (const ph of newOnes) uploaded.push(await uploadImage(ph.path, businessId, 'items'));
+      for (const ph of newOnes) uploaded.push(uploadedByKey.current[ph.key] ?? (await uploadImage(ph.path, businessId, 'items')));
       if (existing) {
         await update.mutateAsync({ id: existing.id, patch: buildItemPatch(f, existing, shops, settings, todayStr) });
         const keep = new Set(f.photos.filter((x) => x.existing).map((x) => x.key));
@@ -301,7 +304,7 @@ function FormBody({ existing, params }: { existing?: NonNullable<ReturnType<type
       />
       {wardrobe ? <Callout>This item came from your own wardrobe, so its cost is $0 and all of the sale is profit.</Callout> : null}
 
-      <Button label="Write listing with AI · Coming soon" variant="secondary" disabled icon={<Icon name="spark" size={18} color={colors.accent} />} accessibilityLabel="Write listing with AI, coming soon" />
+      <AiListingButton form={f} uploaded={uploadedByKey} onUse={(listing, price, mode) => setF((prev) => applySuggestion(prev, listing, price, mode))} />
       <Field
         label="Title"
         value={f.title}
