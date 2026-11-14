@@ -1,5 +1,5 @@
 export { QueryProvider, queryClient } from './QueryProvider';
-export { AuthProvider, useSession, sendEmailCode, verifyEmailCode, useCreateBusiness } from './auth';
+export { AuthProvider, useSession, signInWithPassword, createAccount, useCreateBusiness } from './auth';
 export type { SessionState } from './auth';
 export { useBusiness, useBusinessData, emptyBusinessData, businessKey } from './business';
 export type { BusinessState, BusinessDataResult } from './business';

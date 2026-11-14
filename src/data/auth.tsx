@@ -69,19 +69,21 @@ export function useSession(): SessionState {
   return ctx;
 }
 
-/** Step 1 of sign-in: emails a one-time code (creates the account on first use). */
-export async function sendEmailCode(email: string): Promise<void> {
-  const { error } = await supabase.auth.signInWithOtp({
-    email: email.trim(),
-    options: { shouldCreateUser: true },
-  });
+/** Signs in with email + password. The session arrives via onAuthStateChange. */
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw error;
 }
 
-/** Step 2 of sign-in: checks the code from the email. The session arrives via onAuthStateChange. */
-export async function verifyEmailCode(email: string, token: string): Promise<void> {
-  const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: token.trim(), type: 'email' });
+/**
+ * Creates an account with email + password. Requires "Confirm email" to be OFF in
+ * Supabase (Authentication > Sign In / Providers > Email), since free projects can't send
+ * custom emails. Returns true if signed in straight away, false if Supabase wants a confirmation.
+ */
+export async function createAccount(email: string, password: string): Promise<boolean> {
+  const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
   if (error) throw error;
+  return !!data.session;
 }
 
 /** Calls the create_business RPC and refreshes membership. Resolves with the new business id. */

@@ -8,11 +8,14 @@ The app runs inside **Expo Go**, a free app that opens apps still being built. L
 2. Open Expo Go and tap **Sign up** to create a free Expo account. Use the email Greg has for you.
 3. Tell Greg your Expo username. He adds you to his Expo organisation so the app appears in your Expo Go.
 4. Wait for Greg to say a new version is ready, then open Expo Go: the app is listed under **Projects** (or open the link Greg sends you).
-5. The first time, enter your email. You'll get a 6-digit code by email; type it in. You stay signed in after that.
+5. The first time, tap **Create account** and enter your email and a password (8+ characters). After that you stay signed in. Damon does the same on his phone, then Kat adds him in More › Shared with.
 
 That's it. When Greg publishes a new version, just close and reopen the app in Expo Go to get it.
 
 ## For Greg
+
+Supabase setting (once): Authentication › Sign In / Providers › Email › turn **Confirm email** OFF. (Free Supabase projects can't customise auth emails and send at most 2 per hour, so the app uses email + password with no emails.)
+
 
 One-off:
 
