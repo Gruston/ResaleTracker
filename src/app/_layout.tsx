@@ -51,6 +51,8 @@ function Gate() {
       </Stack.Protected>
       <Stack.Protected guard={signedIn && hasBusiness}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="sale" />
+        <Stack.Screen name="what-if" />
       </Stack.Protected>
     </Stack>
   );
